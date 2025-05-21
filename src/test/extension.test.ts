@@ -9,149 +9,162 @@ import { formatHledgerJournal } from '../extension';
 suite('Hledger Formatter Tests', () => {
 	vscode.window.showInformationMessage('Running hledger formatter tests');
 
-	const samplesPath = path.join(__dirname, '..', '..', 'samples');
+	const testsPath = path.join(__dirname, 'test_journals');
 	
-	// Helper function to read sample files
-	function readSampleFile(filename: string): string {
-		const filePath = path.join(samplesPath, filename);
+	// Helper function to read test journal files
+	function readTestFile(filename: string): string {
+		const filePath = path.join(testsPath, filename);
 		return fs.readFileSync(filePath, 'utf8');
 	}
 
-	// Helper function to validate basic formatting (without decimal alignment)
-	function validateBasicFormatting(formattedText: string) {
-		// Split into lines for validation
-		const lines = formattedText.split('\n');
-		
-		// Track if we're in a transaction
-		let inTransaction = false;
-
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i].trimEnd(); // Remove trailing whitespace
-			
-			// Skip empty lines
-			if (!line) {
-				continue;
-			}
-			
-			// Comments outside transactions - no validation needed
-			if (line.trim().startsWith(';') && !inTransaction) {
-				continue;
-			}
-
-			// Check if this is a transaction header (starts with date)
-			const isTransactionHeader = /^\d{4}[-/]\d{2}[-/]\d{2}/.test(line);
-			
-			if (isTransactionHeader) {
-				inTransaction = true;
-			} else if (inTransaction && !line.trim().startsWith(';')) {
-				// This is a posting line - verify indentation
-				assert.strictEqual(line.startsWith('  '), true, 
-					`Line ${i+1} should start with exactly 2 spaces: "${line}"`);
-			}
-			
-			// Check if we've reached the end of a transaction
-			if (inTransaction && !line) {
-				inTransaction = false;
-			}
-		}
+	// Helper function to normalize line endings and trailing whitespace
+	function normalizeText(text: string): string {
+		return text.split('\n')
+			.map(line => line.trimRight())
+			.join('\n')
+			.trim();
 	}
 
-	// Helper function to validate precise decimal alignment
-	function validateDecimalAlignment(formattedText: string) {
-		// Split into lines for validation
+	test('Format test_1 journal file', () => {
+		// Read input and expected output files
+		const inputJournal = readTestFile('test_1_in.journal');
+		const expectedOutput = readTestFile('test_1_out.journal');
+		
+		// Format the input journal
+		const formattedJournal = formatHledgerJournal(inputJournal);
+		
+		// Normalize both texts to handle line endings and whitespace
+		const normalizedFormatted = normalizeText(formattedJournal);
+		const normalizedExpected = normalizeText(expectedOutput);
+		
+		// Verify the formatting matches the expected output
+		assert.strictEqual(normalizedFormatted, normalizedExpected, 
+			'Formatted output should match expected output');
+		
+		// Additional verification: Check decimal point alignment
+		const decimalPointsAligned = verifyDecimalPointsAligned(formattedJournal);
+		assert.strictEqual(decimalPointsAligned, true, 
+			'Decimal points should be aligned in each transaction');
+	});
+	
+	test('Format inconsistent indentation', () => {
+		// Read input and expected output files
+		const inputJournal = readTestFile('inconsistent_indents_in.journal');
+		const expectedOutput = readTestFile('inconsistent_indents_out.journal');
+		
+		// Format the input journal
+		const formattedJournal = formatHledgerJournal(inputJournal);
+		
+		// Normalize both texts to handle line endings and whitespace
+		const normalizedFormatted = normalizeText(formattedJournal);
+		const normalizedExpected = normalizeText(expectedOutput);
+		
+		// Verify the formatting matches the expected output
+		assert.strictEqual(normalizedFormatted, normalizedExpected, 
+			'Formatted output with inconsistent indentation should match expected output');
+		
+		// Verify indentation correction
+		const correctIndentation = verifyIndentation(formattedJournal);
+		assert.strictEqual(correctIndentation, true, 
+			'All posting lines should have exactly 2 spaces of indentation');
+		
+		// Verify decimal point alignment
+		const decimalPointsAligned = verifyDecimalPointsAligned(formattedJournal);
+		assert.strictEqual(decimalPointsAligned, true, 
+			'Decimal points should be aligned in each transaction');
+	});
+	
+	// Helper function to verify all posting lines have exactly 2 spaces of indentation
+	function verifyIndentation(formattedText: string): boolean {
 		const lines = formattedText.split('\n');
-		const decimalIndices = new Map<number, number>(); // Map transaction index to decimal point position
+		let inTransaction = false;
+		
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i].trimRight();
+			if (!line) {
+				inTransaction = false;
+				continue;
+			}
+			
+			// Check if this is a transaction header
+			if (/^\d{4}[-/]\d{2}[-/]\d{2}/.test(line)) {
+				inTransaction = true;
+				continue;
+			}
+			
+			// Skip comment lines
+			if (line.trim().startsWith(';')) {
+				continue;
+			}
+			
+			// Check posting lines indentation
+			if (inTransaction) {
+				// Verify exactly 2 spaces indentation
+				if (!line.startsWith('  ') || line.startsWith('   ')) {
+					console.error(`Incorrect indentation at line ${i+1}: "${line}"`);
+					return false;
+				}
+			}
+		}
+		
+		return true;
+	}
+	
+	// Helper function to verify decimal points are aligned within each transaction
+	function verifyDecimalPointsAligned(formattedText: string): boolean {
+		const lines = formattedText.split('\n');
+		const decimalPositions = new Map<number, number>(); // Maps transaction index to decimal position
 		
 		let currentTransaction = -1;
 		let inTransaction = false;
 		
 		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i].trimEnd();
+			const line = lines[i].trimRight();
+			
+			// Skip empty lines or end transaction
 			if (!line) {
-				if (inTransaction) {
-					inTransaction = false;
-				}
+				inTransaction = false;
 				continue;
 			}
 			
-			// Check if this is a transaction header
+			// Check if this is a transaction header (starts with date)
 			if (/^\d{4}[-/]\d{2}[-/]\d{2}/.test(line)) {
 				currentTransaction++;
 				inTransaction = true;
-			} else if (inTransaction && line.includes('.') && !line.trim().startsWith(';')) {
-				const decimalIndex = line.indexOf('.');
-				
-				if (!decimalIndices.has(currentTransaction)) {
-					decimalIndices.set(currentTransaction, decimalIndex);
-				} else {
-					const expectedIndex = decimalIndices.get(currentTransaction);
-					assert.strictEqual(decimalIndex, expectedIndex,
-						`Decimal points should align within transaction. Line: "${line}", Expected index: ${expectedIndex}`);
-				}
-			}
-		}
-	}
-
-	test('Basic sample file formatting', () => {
-		const sampleText = readSampleFile('sample.journal');
-		const formattedText = formatHledgerJournal(sampleText);
-		
-		// Verify basic formatting
-		assert.notStrictEqual(formattedText, sampleText, 'Formatting should change inconsistent spacing');
-		validateBasicFormatting(formattedText);
-	});
-
-	test('Complex journal file formatting', () => {
-		const sampleText = readSampleFile('complex.journal');
-		const formattedText = formatHledgerJournal(sampleText);
-		
-		// Verify complex formatting
-		validateBasicFormatting(formattedText);
-	});
-
-	test('User format preservation', () => {
-		const sampleText = readSampleFile('user_format.journal');
-		const formattedText = formatHledgerJournal(sampleText);
-		
-		// Well-formatted files should remain mostly unchanged except for standardization
-		validateBasicFormatting(formattedText);
-		validateDecimalAlignment(formattedText);
-	});
-
-	test('Inconsistent indentation fixing', () => {
-		const sampleText = readSampleFile('inconsistent_indents.journal');
-		const formattedText = formatHledgerJournal(sampleText);
-		
-		// Verify indentation is fixed
-		const lines = formattedText.split('\n');
-		let inTransaction = false;
-		
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i].trimEnd();
-			if (!line) {
 				continue;
 			}
 			
-			// Check if this is a transaction header
-			if (/^\d{4}[-/]\d{2}[-/]\d{2}/.test(line)) {
-				inTransaction = true;
-			} else if (inTransaction && !line.trim().startsWith(';')) {
-				// Verify exactly 2 spaces of indentation for posting lines
-				assert.strictEqual(line.startsWith('  ') && line[2] !== ' ', true,
-					`Line should have exactly 2 spaces of indentation: "${line}"`);
+			// Skip comment lines
+			if (line.trim().startsWith(';')) {
+				continue;
+			}
+			
+			// Process posting lines
+			if (inTransaction && !line.trim().startsWith(';')) {
+				// Check indentation
+				if (!line.startsWith('  ')) {
+					console.error(`Line ${i+1} doesn't have proper indentation: "${line}"`);
+					return false;
+				}
+				
+				// Check for decimal point
+				if (line.includes('.')) {
+					const decimalPosition = line.indexOf('.');
+					
+					if (!decimalPositions.has(currentTransaction)) {
+						decimalPositions.set(currentTransaction, decimalPosition);
+					} else {
+						const expectedPosition = decimalPositions.get(currentTransaction);
+						if (decimalPosition !== expectedPosition) {
+							console.error(`Decimal points not aligned at line ${i+1}. Found: ${decimalPosition}, Expected: ${expectedPosition}`);
+							console.error(`Line: "${line}"`);
+							return false;
+						}
+					}
+				}
 			}
 		}
 		
-		validateBasicFormatting(formattedText);
-		validateDecimalAlignment(formattedText);
-	});
-
-	test('Decimal point alignment', () => {
-		const sampleText = readSampleFile('decimal_alignment.journal');
-		const formattedText = formatHledgerJournal(sampleText);
-		
-		// Verify decimal points are aligned
-		validateBasicFormatting(formattedText);
-		validateDecimalAlignment(formattedText);
-	});
+		return true;
+	}
 });

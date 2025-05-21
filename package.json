@@ -51,11 +51,12 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "tsc -p ./ && npm run copy-test-files",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "copy-test-files": "mkdir -p out/test/test_journals && cp -r src/test/test_journals/* out/test/test_journals/"
   },
   "devDependencies": {
     "@types/vscode": "^1.100.0",

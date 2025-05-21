@@ -203,30 +203,53 @@ function formatTransaction(lines: string[]): string[] {
 		
 		// Extract account and amount
 		const trimmed = line.trim();
-		const match = trimmed.match(/^([^;$€£¥\s][^$€£¥]*?)(?:\s\s+|\t+)([-+]?[$€£¥]?[\d,\.]+(?:\s+[$€£¥])?(?:\s+[@=][\s\S]*)?(?:\s*;[\s\S]*)?)?$/);
 		
-		if (match) {
-			// Line has clear separation between account and amount
-			const account = match[1].trim();
-			const amount = match[2].trim();
+		// Enhanced regex to better handle various amount formats including $-85.50
+		const accountAmountSeparator = /\s{2,}|\t+/; // Two or more spaces or tabs
+		const parts = trimmed.split(accountAmountSeparator);
+		
+		if (parts.length >= 2) {
+			// We have an account and amount with clear separation
+			const account = parts[0].trim();
+			let amount = parts.slice(1).join(' ').trim(); // Join in case there were multiple parts
 			
-			// Find position of decimal point in the amount
-			const decimalIndex = amount.indexOf('.');
+			// Check if this is a negative amount (either $- format or -$ format)
+			const isNegative = amount.match(/^\$-/) || amount.match(/^-\$/);
 			
-			// Count characters before decimal point (including currency symbol and negative sign)
-			const charsBeforeDecimal = decimalIndex > 0 ? decimalIndex : amount.length;
+			// Transform $-X.XX to -$X.XX format
+			const currencyNegativeRegex = /^(\$|€|£|¥)-(\d+(?:,\d+)*(?:\.\d+)?)/;
+			amount = amount.replace(currencyNegativeRegex, '-$1$2');
 			
-			// For amounts with negative signs, add one less padding to align decimal points
-			const isNegative = amount.startsWith('-');
-			
-			// Calculate padding needed to align the amount at the fixed column
-			// Adjust for negative numbers to align decimal points
-			const paddingNeeded = Math.max(1, fixedAmountColumn - (indentStr.length + account.length + (isNegative ? 1 : 0)));
+			// Calculate padding needed to align all amounts at the fixed column
+			// Subtract 1 from padding for negative amounts to maintain alignment
+			const paddingNeeded = Math.max(1, fixedAmountColumn - (indentStr.length + account.length) - (isNegative ? 1 : 0));
 			
 			formattedLines.push(`${indentStr}${account}${' '.repeat(paddingNeeded)}${amount}`);
 		} else {
-			// Line might have just an account with no amount, or unusual formatting
-			formattedLines.push(`${indentStr}${trimmed}`);
+			// Fallback: Try to extract account and amount with a regex pattern
+			// This handles cases where there might not be clear spacing
+			const fallbackMatch = trimmed.match(/^(\S+(?:\s+\S+)*?)(?:\s*)(\$-?\d+(?:\.\d+)?|\-\$\d+(?:\.\d+)?|\d+(?:\.\d+)?)$/);
+			
+			if (fallbackMatch) {
+				const account = fallbackMatch[1].trim();
+				let amount = fallbackMatch[2].trim();
+				
+				// Check if this is a negative amount (either $- format or -$ format)
+				const isNegative = amount.match(/^\$-/) || amount.match(/^-\$/);
+				
+				// Transform $-X.XX to -$X.XX format
+				const currencyNegativeRegex = /^(\$|€|£|¥)-(\d+(?:,\d+)*(?:\.\d+)?)/;
+				amount = amount.replace(currencyNegativeRegex, '-$1$2');
+				
+				// Calculate padding needed to align all amounts at the fixed column
+				// Subtract 1 from padding for negative amounts to maintain alignment
+				const paddingNeeded = Math.max(1, fixedAmountColumn - (indentStr.length + account.length) - (isNegative ? 1 : 0));
+				
+				formattedLines.push(`${indentStr}${account}${' '.repeat(paddingNeeded)}${amount}`);
+			} else {
+				// Line might have just an account with no amount, or unusual formatting
+				formattedLines.push(`${indentStr}${trimmed}`);
+			}
 		}
 	}
 	
