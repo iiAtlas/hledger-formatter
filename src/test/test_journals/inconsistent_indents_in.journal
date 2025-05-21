@@ -1,6 +1,6 @@
 ; Sample file with inconsistent indentation
 
-2025-05-01 * Internet Bill
+2025-05-01 *   Internet Bill
     expenses:utilities:internet          $65.00
   assets:bank:checking                 -$65.00
 
@@ -8,6 +8,6 @@
 expenses:food                           $102.54
         assets:bank:checking           -$102.54
 
-2025-05-10 * Restaurant
+2025-05-10   * Restaurant
    expenses:dining                       $45.75
  assets:bank:checking                   -$45.75 

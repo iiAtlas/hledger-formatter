@@ -176,7 +176,11 @@ function formatTransaction(lines: string[]): string[] {
 		return lines;
 	}
 
-	const formattedLines: string[] = [lines[0]]; // Keep the header line as is
+	// Format header line to normalize spaces
+	const headerLine = lines[0];
+	const formattedHeader = formatTransactionHeader(headerLine);
+	
+	const formattedLines: string[] = [formattedHeader]; // Use formatted header
 	const postingLines: string[] = [];
 	
 	// Find posting lines (non-comment lines after header)
@@ -254,6 +258,32 @@ function formatTransaction(lines: string[]): string[] {
 	}
 	
 	return formattedLines;
+}
+
+/**
+ * Formats a transaction header by normalizing spaces between date, status marker, and description
+ * @param headerLine The transaction header line
+ * @returns Formatted transaction header line
+ */
+function formatTransactionHeader(headerLine: string): string {
+	// Match date, optional status marker (*,!), and description
+	const headerMatch = headerLine.match(/^(\d{4}[/-]\d{2}[/-]\d{2})(?:\s+)([*!])?(?:\s*)(.*)$/);
+	
+	if (headerMatch) {
+		const date = headerMatch[1];
+		const statusMarker = headerMatch[2] || '';
+		const description = headerMatch[3];
+		
+		// Create properly formatted header with single spaces
+		if (statusMarker) {
+			return `${date} ${statusMarker} ${description}`;
+		} else {
+			return `${date} ${description}`;
+		}
+	}
+	
+	// If no match, return the original line
+	return headerLine;
 }
 
 // This method is called when your extension is deactivated
