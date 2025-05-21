@@ -74,6 +74,66 @@ suite('Hledger Formatter Tests', () => {
 			'Decimal points should be aligned in each transaction');
 	});
 	
+	test('Format sample journal with negative amounts', () => {
+		// Read input and expected output files
+		const inputJournal = readTestFile('sample_in.journal');
+		const expectedOutput = readTestFile('sample_out.journal');
+		
+		// Format the input journal
+		const formattedJournal = formatHledgerJournal(inputJournal);
+		
+		// Normalize both texts to handle line endings and whitespace
+		const normalizedFormatted = normalizeText(formattedJournal);
+		const normalizedExpected = normalizeText(expectedOutput);
+		
+		// Verify the formatting matches the expected output
+		assert.strictEqual(normalizedFormatted, normalizedExpected, 
+			'Formatted output should correctly format negative amounts');
+		
+		// Verify indentation correction
+		const correctIndentation = verifyIndentation(formattedJournal);
+		assert.strictEqual(correctIndentation, true, 
+			'All posting lines should have exactly 2 spaces of indentation');
+		
+		// Verify decimal point alignment
+		const decimalPointsAligned = verifyDecimalPointsAligned(formattedJournal);
+		assert.strictEqual(decimalPointsAligned, true, 
+			'Decimal points should be aligned in each transaction');
+			
+		// Verify negative amounts format
+		const correctNegativeFormat = verifyNegativeAmountFormat(formattedJournal);
+		assert.strictEqual(correctNegativeFormat, true, 
+			'Negative amounts should be in -$X.XX format');
+	});
+	
+	test('Correct alignment of negative amounts', () => {
+		// Read input and expected output files
+		const inputJournal = readTestFile('negative_amounts_in.journal');
+		const expectedOutput = readTestFile('negative_amounts_out.journal');
+		
+		// Format the input journal
+		const formattedJournal = formatHledgerJournal(inputJournal);
+		
+		// Normalize both texts to handle line endings and whitespace
+		const normalizedFormatted = normalizeText(formattedJournal);
+		const normalizedExpected = normalizeText(expectedOutput);
+		
+		// Verify the formatting matches the expected output
+		assert.strictEqual(normalizedFormatted, normalizedExpected, 
+			'Formatted output should correctly align negative amounts in both formats');
+		
+		// Visual debug if test fails
+		if (normalizedFormatted !== normalizedExpected) {
+			console.log('Expected:\n' + expectedOutput);
+			console.log('Actual:\n' + formattedJournal);
+		}
+		
+		// Verify negative amounts format
+		const correctNegativeFormat = verifyNegativeAmountFormat(formattedJournal);
+		assert.strictEqual(correctNegativeFormat, true, 
+			'Negative amounts should be in -$X.XX format');
+	});
+	
 	// Helper function to verify all posting lines have exactly 2 spaces of indentation
 	function verifyIndentation(formattedText: string): boolean {
 		const lines = formattedText.split('\n');
@@ -162,6 +222,34 @@ suite('Hledger Formatter Tests', () => {
 						}
 					}
 				}
+			}
+		}
+		
+		return true;
+	}
+	
+	// Helper function to verify negative amounts are in -$X.XX format, not $-X.XX
+	function verifyNegativeAmountFormat(formattedText: string): boolean {
+		const lines = formattedText.split('\n');
+		
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i].trimRight();
+			
+			// Skip transaction headers, comments, and empty lines
+			if (!line || /^\d{4}[-/]\d{2}[-/]\d{2}/.test(line) || line.trim().startsWith(';')) {
+				continue;
+			}
+			
+			// Look for any amount in $-X.XX format (incorrect)
+			if (line.includes('$-')) {
+				console.error(`Line ${i+1} has incorrect negative amount format: "${line}"`);
+				return false;
+			}
+			
+			// Check for -$X.XX format (correct)
+			if (line.includes('-$')) {
+				// This is the correct format
+				continue;
 			}
 		}
 		

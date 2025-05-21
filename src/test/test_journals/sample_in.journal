@@ -1,0 +1,22 @@
+; Sample hledger journal file with inconsistent spacing
+
+2023-01-01 Opening Balance
+    assets:bank:checking        $1000.00
+    equity:opening balances    $-1000.00
+
+2023-01-05   Grocery Store
+  expenses:food      $85.50
+    assets:bank:checking    $-85.50
+
+2023-01-10 Coffee Shop
+ expenses:dining:coffee  $4.75
+   assets:cash  $-4.75
+
+2023-01-15    Salary
+    assets:bank:checking   $2000.00
+  income:salary    $-2000.00
+
+; Note the inconsistent spacing in account names and amounts
+2023-01-20  Rent
+  expenses:housing:rent          $800.00
+ assets:bank:checking  $-800.00 
