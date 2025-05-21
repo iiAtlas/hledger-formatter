@@ -3,6 +3,7 @@
   "displayName": "hledger-formatter",
   "description": "Format hledger journal files",
   "version": "0.0.1",
+  "repository": "https://github.com/iiAtlas/hledger-formatter.git",
   "engines": {
     "vscode": "^1.92.0"
   },
@@ -16,8 +17,16 @@
     "languages": [
       {
         "id": "hledger",
-        "aliases": ["hledger journal", "hledger", "ledger"],
-        "extensions": [".journal", ".hledger", ".ledger"],
+        "aliases": [
+          "hledger journal",
+          "hledger",
+          "ledger"
+        ],
+        "extensions": [
+          ".journal",
+          ".hledger",
+          ".ledger"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
@@ -64,14 +73,15 @@
     "copy-test-files": "mkdir -p out/test/test_journals && cp -r src/test/test_journals/* out/test/test_journals/"
   },
   "devDependencies": {
-    "@types/vscode": "^1.100.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
+    "@types/vscode": "^1.92.0",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
     "@typescript-eslint/parser": "^8.31.1",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.5.2",
     "eslint": "^9.25.1",
     "typescript": "^5.8.3",
-    "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.5.2"
+    "vsce": "^2.15.0"
   }
 }
