@@ -7,11 +7,20 @@
     "vscode": "^1.92.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Formatters"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "languages": [
+      {
+        "id": "hledger",
+        "aliases": ["hledger journal", "hledger", "ledger"],
+        "extensions": [".journal", ".hledger", ".ledger"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
     "commands": [
       {
         "command": "hledger-formatter.formatDocument",

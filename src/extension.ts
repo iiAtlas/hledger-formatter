@@ -72,9 +72,13 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	});
 
-	// Register formatter provider
+	// Register formatter provider for hledger file types
 	const formatterProvider = vscode.languages.registerDocumentFormattingEditProvider(
-		[{ language: 'plaintext', pattern: '**/*.{journal,hledger,ledger}' }],
+		[
+			{ scheme: 'file', pattern: '**/*.journal' },
+			{ scheme: 'file', pattern: '**/*.hledger' },
+			{ scheme: 'file', pattern: '**/*.ledger' }
+		],
 		{
 			provideDocumentFormattingEdits(document: vscode.TextDocument): vscode.TextEdit[] {
 				const text = document.getText();
@@ -93,7 +97,37 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	);
 
-	context.subscriptions.push(formatCommand, formatOnSaveDisposable, formatterProvider);
+	// Register range formatter as well for selection formatting
+	const rangeFormatterProvider = vscode.languages.registerDocumentRangeFormattingEditProvider(
+		[
+			{ scheme: 'file', pattern: '**/*.journal' },
+			{ scheme: 'file', pattern: '**/*.hledger' },
+			{ scheme: 'file', pattern: '**/*.ledger' }
+		],
+		{
+			provideDocumentRangeFormattingEdits(
+				document: vscode.TextDocument,
+				range: vscode.Range
+			): vscode.TextEdit[] {
+				// For simplicity, we'll format the entire document
+				// A more advanced implementation could format just the selected transactions
+				const text = document.getText();
+				const formattedText = formatHledgerJournal(text);
+				
+				return [
+					new vscode.TextEdit(
+						new vscode.Range(
+							document.positionAt(0),
+							document.positionAt(text.length)
+						),
+						formattedText
+					)
+				];
+			}
+		}
+	);
+
+	context.subscriptions.push(formatCommand, formatOnSaveDisposable, formatterProvider, rangeFormatterProvider);
 }
 
 /**
