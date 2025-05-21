@@ -14,10 +14,6 @@
   "contributes": {
     "commands": [
       {
-        "command": "hledger-formatter.helloWorld",
-        "title": "Hello World"
-      },
-      {
         "command": "hledger-formatter.formatDocument",
         "title": "Format hledger Journal"
       }
@@ -51,9 +47,9 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./ && npm run copy-test-files",
+    "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
+    "pretest": "npm run compile && npm run lint && npm run copy-test-files",
     "lint": "eslint src",
     "test": "vscode-test",
     "copy-test-files": "mkdir -p out/test/test_journals && cp -r src/test/test_journals/* out/test/test_journals/"
