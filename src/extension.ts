@@ -160,6 +160,77 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
+	// Create new journal file command
+	const newFileCommand = vscode.commands.registerCommand('hledger-formatter.newFile', async () => {
+		const today = new Date();
+		const currentMonth = today.getMonth() + 1; // 0-indexed to 1-indexed
+		const currentYear = today.getFullYear();
+		const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+		
+		// Prompt user for month or use current month
+		const monthInput = await vscode.window.showInputBox({
+			prompt: 'Enter month (1-12) or press Enter for current month',
+			value: currentMonth.toString(),
+			validateInput: (value) => {
+				const num = parseInt(value);
+				if (isNaN(num) || num < 1 || num > 12) {
+					return 'Please enter a valid month number (1-12)';
+				}
+				return null;
+			}
+		});
+
+		if (!monthInput) {
+			return; // User cancelled
+		}
+
+		const selectedMonth = parseInt(monthInput);
+		const monthName = monthNames[selectedMonth - 1];
+		const paddedMonth = selectedMonth.toString().padStart(2, '0');
+		
+		// Create filename: e.g., "09-sep.journal"
+		const fileName = `${paddedMonth}-${monthName}.journal`;
+		
+		// Get the workspace folder
+		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+		if (!workspaceFolder) {
+			vscode.window.showErrorMessage('No workspace folder found. Please open a folder first.');
+			return;
+		}
+		
+		const fileUri = vscode.Uri.joinPath(workspaceFolder.uri, fileName);
+		
+		// Check if file already exists
+		try {
+			await vscode.workspace.fs.stat(fileUri);
+			const overwrite = await vscode.window.showWarningMessage(
+				`File ${fileName} already exists. Do you want to open it?`,
+				'Open',
+				'Cancel'
+			);
+			
+			if (overwrite === 'Open') {
+				const document = await vscode.workspace.openTextDocument(fileUri);
+				await vscode.window.showTextDocument(document);
+			}
+			return;
+		} catch {
+			// File doesn't exist, proceed to create it
+		}
+		
+		// Create initial content with header comment
+		const year = selectedMonth < currentMonth ? currentYear : currentYear;
+		const monthNameCapitalized = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+		const initialContent = `; ${monthNameCapitalized} ${year} Journal\n;\n; Created on ${today.toISOString().split('T')[0]}\n\n`;
+		
+		// Create and open the file
+		await vscode.workspace.fs.writeFile(fileUri, Buffer.from(initialContent, 'utf8'));
+		const document = await vscode.workspace.openTextDocument(fileUri);
+		await vscode.window.showTextDocument(document);
+		
+		vscode.window.showInformationMessage(`Created new journal file: ${fileName}`);
+	});
+
 	// Sort journal entries command
 	const sortCommand = vscode.commands.registerCommand('hledger-formatter.sortEntries', () => {
 		const editor = vscode.window.activeTextEditor;
@@ -197,7 +268,7 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-	context.subscriptions.push(formatCommand, formatOnSaveDisposable, formatterProvider, rangeFormatterProvider, toggleCommentCommand, sortCommand);
+	context.subscriptions.push(formatCommand, formatOnSaveDisposable, formatterProvider, rangeFormatterProvider, toggleCommentCommand, newFileCommand, sortCommand);
 }
 
 /**
