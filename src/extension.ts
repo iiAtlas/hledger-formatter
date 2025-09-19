@@ -212,6 +212,8 @@ export function formatHledgerJournal(text: string): string {
 	
 	let inTransaction = false;
 	let transactionLines: string[] = [];
+	let lastWasTransaction = false;
+	let hasContent = false; // Track if we've seen any non-empty content
 	
 	// Process line by line
 	for (let i = 0; i < lines.length; i++) {
@@ -224,8 +226,15 @@ export function formatHledgerJournal(text: string): string {
 				formattedLines.push(...formatTransaction(transactionLines));
 				transactionLines = [];
 				inTransaction = false;
+				lastWasTransaction = true;
+				hasContent = true;
+				// Add exactly one blank line after transaction
+				formattedLines.push('');
+			} else if (!lastWasTransaction && hasContent) {
+				// Only keep empty lines that are not at the start and not between transactions
+				formattedLines.push(line);
 			}
-			formattedLines.push(line);
+			// Skip empty lines at the start or that come after we just added one
 			continue;
 		}
 		
@@ -236,6 +245,8 @@ export function formatHledgerJournal(text: string): string {
 				transactionLines.push(line);
 			} else {
 				formattedLines.push(line);
+				lastWasTransaction = false;
+				hasContent = true;
 			}
 			continue;
 		}
@@ -247,24 +258,42 @@ export function formatHledgerJournal(text: string): string {
 			if (inTransaction) {
 				// End previous transaction and format it
 				formattedLines.push(...formatTransaction(transactionLines));
+				// Add exactly one blank line between transactions
+				formattedLines.push('');
 				transactionLines = [];
 			}
 			
 			// Start new transaction
 			inTransaction = true;
 			transactionLines.push(line);
+			lastWasTransaction = false;
+			hasContent = true;
 		} else if (inTransaction) {
 			// Posting line within transaction
 			transactionLines.push(line);
 		} else {
 			// Neither transaction header nor posting, keep as-is
 			formattedLines.push(line);
+			lastWasTransaction = false;
+			hasContent = true;
 		}
 	}
 	
 	// Format the last transaction if any
 	if (inTransaction && transactionLines.length > 0) {
 		formattedLines.push(...formatTransaction(transactionLines));
+		// Add one blank line at the end after the last transaction
+		formattedLines.push('');
+	}
+	
+	// Remove any leading blank lines
+	while (formattedLines.length > 0 && formattedLines[0] === '') {
+		formattedLines.shift();
+	}
+	
+	// Remove any trailing empty lines beyond one
+	while (formattedLines.length > 1 && formattedLines[formattedLines.length - 1] === '' && formattedLines[formattedLines.length - 2] === '') {
+		formattedLines.pop();
 	}
 	
 	return formattedLines.join('\n');

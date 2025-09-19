@@ -5,6 +5,8 @@ A VS Code extension to format spacing in hledger journal files.
 ## Features
 
 - Automatically aligns account names and amounts in hledger journal files
+- Ensures exactly one blank line between transaction entries
+- Removes any blank lines at the start of the file
 - Format on demand with keyboard shortcut (Shift+Alt+F)
 - Format on save option (enabled by default)
 - Context menu option to format hledger files
@@ -34,9 +36,11 @@ This extension contributes the following settings:
 Before formatting:
 
 ```
+
 2023-01-05   Grocery Store
   expenses:food      $85.50
     assets:bank:checking    $-85.50
+
 
 2023-01-10 Coffee Shop
  expenses:dining:coffee  $4.75
@@ -46,13 +50,13 @@ Before formatting:
 After formatting:
 
 ```
-2023-01-05   Grocery Store
-  expenses:food                        $85.50
-  assets:bank:checking                -$85.50
+2023-01-05 Grocery Store
+  expenses:food                           $85.50
+  assets:bank:checking                   -$85.50
 
 2023-01-10 Coffee Shop
-  expenses:dining:coffee               $4.75
-  assets:cash                         -$4.75
+  expenses:dining:coffee                  $4.75
+  assets:cash                            -$4.75
 ```
 
 ## Release Notes
