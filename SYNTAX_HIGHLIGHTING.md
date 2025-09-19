@@ -23,7 +23,7 @@ Account names are highlighted with different colors for each hierarchical level:
 - **Amounts**: Numeric amounts with currency symbols are highlighted
 - **Project Tags**: `project: name` or `project:name` tags are highlighted with:
   - Project keyword in purple bold
-  - Project name in red underline
+  - Project name in bright blue bold italic
   - Can appear on separate lines or within transaction descriptions
 
 ## Example
@@ -43,7 +43,7 @@ In this example:
 - `personal` appears in light blue (level 4)
 - The amount `$1000.00` is highlighted
 - The comment is in green italic
-- `project:` appears in purple bold and `mugsly` in red underline
+- `project:` appears in purple bold and `mugsly` in bright blue bold italic
 
 ## Custom Theme
 The extension includes an optional "hledger Color Theme" optimized for viewing journal files with VS Code's dark theme.

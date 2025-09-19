@@ -111,8 +111,8 @@
       "name": "Project Name",
       "scope": "entity.name.type.project.hledger",
       "settings": {
-        "foreground": "#E06C75",
-        "fontStyle": "underline"
+        "foreground": "#61AFEF",
+        "fontStyle": "bold italic"
       }
     }
   ]
