@@ -1,0 +1,100 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "hledger",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#transaction"
+    },
+    {
+      "include": "#posting"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "patterns": [
+        {
+          "name": "comment.line.semicolon.hledger",
+          "match": ";.*$"
+        }
+      ]
+    },
+    "transaction": {
+      "patterns": [
+        {
+          "name": "meta.transaction.hledger",
+          "match": "^(\\d{4}[-/]\\d{2}[-/]\\d{2})(?:\\s+([*!]))?(?:\\s+(.*))?$",
+          "captures": {
+            "1": {
+              "name": "constant.numeric.date.hledger"
+            },
+            "2": {
+              "name": "keyword.operator.status.hledger"
+            },
+            "3": {
+              "name": "string.unquoted.description.hledger"
+            }
+          }
+        }
+      ]
+    },
+    "posting": {
+      "patterns": [
+        {
+          "name": "meta.posting.hledger",
+          "match": "^\\s+(([^:]+)(?::([^:]+)(?::([^:]+)(?::([^:]+)(?::([^:]+))?)?)?)?(?:\\s+(.*))?)",
+          "captures": {
+            "2": {
+              "name": "entity.name.tag.account.level1.hledger"
+            },
+            "3": {
+              "name": "entity.name.function.account.level2.hledger"
+            },
+            "4": {
+              "name": "variable.parameter.account.level3.hledger"
+            },
+            "5": {
+              "name": "storage.type.account.level4.hledger"
+            },
+            "6": {
+              "name": "keyword.control.account.level5.hledger"
+            },
+            "7": {
+              "name": "meta.amount.hledger",
+              "patterns": [
+                {
+                  "include": "#amount"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "amount": {
+      "patterns": [
+        {
+          "name": "constant.numeric.currency.hledger",
+          "match": "[-]?\\$[-]?[0-9]+(?:[.,][0-9]+)?",
+          "captures": {
+            "0": {
+              "name": "constant.numeric.amount.hledger"
+            }
+          }
+        },
+        {
+          "name": "constant.numeric.amount.hledger",
+          "match": "[-]?[0-9]+(?:[.,][0-9]+)?(?:\\s+[A-Z]{3,})?",
+          "captures": {
+            "0": {
+              "name": "constant.numeric.amount.hledger"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "scopeName": "source.hledger"
+}

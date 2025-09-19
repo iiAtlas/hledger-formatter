@@ -1,0 +1,25 @@
+; This is a comment - should be highlighted in green
+
+2023-01-01 * Opening Balance
+    assets:bank:checking:personal        $1000.00
+    equity:opening:balances              -$1000.00
+
+2023-01-05 ! Grocery Store
+    expenses:food:groceries:produce      $45.50
+    expenses:food:groceries:dairy         $20.00
+    assets:bank:checking:personal        -$65.50
+
+2023-01-10 Coffee Shop
+    expenses:dining:coffee                $4.75
+    assets:cash                          -$4.75
+
+; Testing different account depths
+2023-01-15 Complex Transaction
+    assets:investments:stocks:technology:apple    10 AAPL
+    assets:bank:savings                          -$1500.00
+    expenses:fees:brokerage                       $9.95
+    
+; Testing negative amounts
+2023-01-20 Rent Payment
+    expenses:housing:rent                 $800.00
+    assets:bank:checking                 -$800.00

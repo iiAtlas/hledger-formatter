@@ -1,0 +1,79 @@
+{
+  "name": "hledger Color Theme",
+  "colors": {},
+  "tokenColors": [
+    {
+      "name": "Comment",
+      "scope": "comment.line.semicolon.hledger",
+      "settings": {
+        "foreground": "#6A9955",
+        "fontStyle": "italic"
+      }
+    },
+    {
+      "name": "Date",
+      "scope": "constant.numeric.date.hledger",
+      "settings": {
+        "foreground": "#B5CEA8"
+      }
+    },
+    {
+      "name": "Transaction Status",
+      "scope": "keyword.operator.status.hledger",
+      "settings": {
+        "foreground": "#D16969",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "name": "Transaction Description",
+      "scope": "string.unquoted.description.hledger",
+      "settings": {
+        "foreground": "#CE9178"
+      }
+    },
+    {
+      "name": "Account Level 1",
+      "scope": "entity.name.tag.account.level1.hledger",
+      "settings": {
+        "foreground": "#569CD6",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "name": "Account Level 2",
+      "scope": "entity.name.function.account.level2.hledger",
+      "settings": {
+        "foreground": "#4EC9B0"
+      }
+    },
+    {
+      "name": "Account Level 3",
+      "scope": "variable.parameter.account.level3.hledger",
+      "settings": {
+        "foreground": "#DCDCAA"
+      }
+    },
+    {
+      "name": "Account Level 4",
+      "scope": "storage.type.account.level4.hledger",
+      "settings": {
+        "foreground": "#9CDCFE"
+      }
+    },
+    {
+      "name": "Account Level 5",
+      "scope": "keyword.control.account.level5.hledger",
+      "settings": {
+        "foreground": "#C586C0"
+      }
+    },
+    {
+      "name": "Amount",
+      "scope": "constant.numeric.amount.hledger",
+      "settings": {
+        "foreground": "#B5CEA8"
+      }
+    }
+  ]
+}
