@@ -71,6 +71,24 @@ The comment toggle feature (Cmd+/) uses smart block behavior and preserves inden
 - Posting lines: `  Assets:Cash  $100.00` → `  ; Assets:Cash  $100.00`
 - Maintains visual hierarchy when commenting/uncommenting
 
+**Example:**
+```
+Mixed state:
+; 2025-07-31 * Transaction
+  assets:checking $100.00    ← uncommented
+  ; reconciliation note      ← commented
+
+First toggle (comments all):
+; 2025-07-31 * Transaction
+  ; assets:checking $100.00   ← now commented
+  ; reconciliation note       ← stays commented
+
+Second toggle (uncomments all):
+2025-07-31 * Transaction
+  assets:checking $100.00     ← now uncommented
+  reconciliation note         ← now uncommented
+```
+
 ### Syntax Highlighting Features
 
 The extension provides rich syntax highlighting with distinct colors for:

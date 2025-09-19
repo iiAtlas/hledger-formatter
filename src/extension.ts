@@ -113,7 +113,7 @@ export function activate(context: vscode.ExtensionContext) {
 				// A more advanced implementation could format just the selected transactions
 				const text = document.getText();
 				const formattedText = formatHledgerJournal(text);
-				
+
 				return [
 					new vscode.TextEdit(
 						new vscode.Range(
@@ -127,7 +127,40 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	);
 
-	context.subscriptions.push(formatCommand, formatOnSaveDisposable, formatterProvider, rangeFormatterProvider);
+	// Toggle comment command for hledger files
+	const toggleCommentCommand = vscode.commands.registerCommand('hledger-formatter.toggleComment', () => {
+		const editor = vscode.window.activeTextEditor;
+
+		if (!editor) {
+			return;
+		}
+
+		const document = editor.document;
+
+		// Check if this is a hledger journal file
+		if (!document.fileName.endsWith('.journal') &&
+			!document.fileName.endsWith('.hledger') &&
+			!document.fileName.endsWith('.ledger')) {
+			return;
+		}
+
+		const selection = editor.selection;
+		const startLine = selection.start.line;
+		const endLine = selection.end.line;
+		const text = document.getText();
+
+		const modifiedText = toggleCommentLines(text, startLine, endLine);
+
+		editor.edit((editBuilder) => {
+			const fullRange = new vscode.Range(
+				document.positionAt(0),
+				document.positionAt(text.length)
+			);
+			editBuilder.replace(fullRange, modifiedText);
+		});
+	});
+
+	context.subscriptions.push(formatCommand, formatOnSaveDisposable, formatterProvider, rangeFormatterProvider, toggleCommentCommand);
 }
 
 /**
@@ -318,6 +351,71 @@ function formatTransactionHeader(headerLine: string): string {
 	
 	// If no match, return the original line
 	return headerLine;
+}
+
+/**
+ * Toggles comments on specified lines of hledger journal text
+ * @param text The original journal text
+ * @param startLine Zero-based start line number
+ * @param endLine Zero-based end line number
+ * @returns The text with comments toggled on the specified lines
+ */
+export function toggleCommentLines(text: string, startLine: number, endLine: number): string {
+	const lines = text.split('\n');
+
+	// First pass: Analyze the selection to determine action
+	let hasUncommentedLines = false;
+
+	for (let lineNumber = startLine; lineNumber <= endLine && lineNumber < lines.length; lineNumber++) {
+		const lineText = lines[lineNumber];
+
+		// Skip empty lines in analysis
+		if (!lineText.trim()) {
+			continue;
+		}
+
+		// Check if line is commented (with preserved indentation)
+		const commentMatch = lineText.match(/^(\s*); (.*)$/);
+
+		if (!commentMatch) {
+			// Found an uncommented non-empty line
+			hasUncommentedLines = true;
+			break;
+		}
+	}
+
+	// Second pass: Apply consistent action to all lines
+	for (let lineNumber = startLine; lineNumber <= endLine && lineNumber < lines.length; lineNumber++) {
+		const lineText = lines[lineNumber];
+
+		// Skip empty lines
+		if (!lineText.trim()) {
+			continue;
+		}
+
+		// Check if line is commented (with preserved indentation)
+		const commentMatch = lineText.match(/^(\s*); (.*)$/);
+
+		if (hasUncommentedLines) {
+			// Comment all lines (including already commented ones)
+			if (!commentMatch) {
+				// Line is not commented, so comment it
+				const leadingWhitespace = lineText.match(/^\s*/)?.[0] || '';
+				const restOfLine = lineText.substring(leadingWhitespace.length);
+				lines[lineNumber] = `${leadingWhitespace}; ${restOfLine}`;
+			}
+			// If line is already commented, leave it as-is
+		} else {
+			// Uncomment all lines (all lines should be commented at this point)
+			if (commentMatch) {
+				// Uncomment: restore original whitespace and content
+				const [, leadingWhitespace, content] = commentMatch;
+				lines[lineNumber] = `${leadingWhitespace}${content}`;
+			}
+		}
+	}
+
+	return lines.join('\n');
 }
 
 // This method is called when your extension is deactivated

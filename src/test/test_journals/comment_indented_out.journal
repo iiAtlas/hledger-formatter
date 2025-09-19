@@ -1,0 +1,9 @@
+; 2025-03-01 Transaction with indented comments
+    ; This is an indented comment
+  ; Assets:Cash                             $100.00
+  ; Income:Salary                          -$100.00
+
+    ; This is a top-level indented comment
+  ; Regular comment
+; 2025-03-02 Another transaction
+  ; Expenses:Food                           $25.00

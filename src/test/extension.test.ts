@@ -3,8 +3,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-// Import the formatter function directly for testing
-import { formatHledgerJournal } from '../extension';
+// Import the formatter and comment functions directly for testing
+import { formatHledgerJournal, toggleCommentLines } from '../extension';
 
 suite('Hledger Formatter Tests', () => {
 	vscode.window.showInformationMessage('Running hledger formatter tests');
@@ -130,10 +130,125 @@ suite('Hledger Formatter Tests', () => {
 		
 		// Verify negative amounts format
 		const correctNegativeFormat = verifyNegativeAmountFormat(formattedJournal);
-		assert.strictEqual(correctNegativeFormat, true, 
+		assert.strictEqual(correctNegativeFormat, true,
 			'Negative amounts should be in -$X.XX format');
 	});
-	
+
+	test('Toggle comment - simple case', () => {
+		// Read input and expected output files
+		const inputJournal = readTestFile('comment_simple_in.journal');
+		const expectedOutput = readTestFile('comment_simple_out.journal');
+
+		// Toggle comments on all lines (0 to end)
+		const lines = inputJournal.split('\n');
+		const modifiedJournal = toggleCommentLines(inputJournal, 0, lines.length - 1);
+
+		// Normalize both texts to handle line endings and whitespace
+		const normalizedModified = normalizeText(modifiedJournal);
+		const normalizedExpected = normalizeText(expectedOutput);
+
+		// Verify the comment toggle matches the expected output
+		assert.strictEqual(normalizedModified, normalizedExpected,
+			'Comment toggle should match expected output');
+	});
+
+	test('Toggle comment - mixed case', () => {
+		// Read input and expected output files
+		const inputJournal = readTestFile('comment_mixed_in.journal');
+		const expectedOutput = readTestFile('comment_mixed_out.journal');
+
+		// Toggle comments on all lines (0 to end)
+		const lines = inputJournal.split('\n');
+		const modifiedJournal = toggleCommentLines(inputJournal, 0, lines.length - 1);
+
+		// Normalize both texts to handle line endings and whitespace
+		const normalizedModified = normalizeText(modifiedJournal);
+		const normalizedExpected = normalizeText(expectedOutput);
+
+		// Verify the comment toggle matches the expected output
+		assert.strictEqual(normalizedModified, normalizedExpected,
+			'Mixed comment toggle should match expected output');
+	});
+
+	test('Toggle comment - indented case', () => {
+		// Read input and expected output files
+		const inputJournal = readTestFile('comment_indented_in.journal');
+		const expectedOutput = readTestFile('comment_indented_out.journal');
+
+		// Toggle comments on all lines (0 to end)
+		const lines = inputJournal.split('\n');
+		const modifiedJournal = toggleCommentLines(inputJournal, 0, lines.length - 1);
+
+		// Normalize both texts to handle line endings and whitespace
+		const normalizedModified = normalizeText(modifiedJournal);
+		const normalizedExpected = normalizeText(expectedOutput);
+
+		// Verify the comment toggle matches the expected output
+		assert.strictEqual(normalizedModified, normalizedExpected,
+			'Indented comment toggle should match expected output');
+	});
+
+	test('Toggle comment - single line', () => {
+		const testInput = '2025-03-01 Test transaction\n  Assets:Cash                $100.00\n  Income:Salary             -$100.00';
+
+		// Toggle comment on first line only
+		const result = toggleCommentLines(testInput, 0, 0);
+		const lines = result.split('\n');
+
+		// First line should be commented, others unchanged
+		assert.strictEqual(lines[0], '; 2025-03-01 Test transaction');
+		assert.strictEqual(lines[1], '  Assets:Cash                $100.00');
+		assert.strictEqual(lines[2], '  Income:Salary             -$100.00');
+	});
+
+	test('Toggle comment - range selection', () => {
+		const testInput = '2025-03-01 Test transaction\n  Assets:Cash                $100.00\n  Income:Salary             -$100.00\n\n2025-03-02 Another transaction';
+
+		// Toggle comment on lines 1-2 only (the posting lines)
+		const result = toggleCommentLines(testInput, 1, 2);
+		const lines = result.split('\n');
+
+		// First line unchanged, lines 1-2 commented with preserved indentation, rest unchanged
+		assert.strictEqual(lines[0], '2025-03-01 Test transaction');
+		assert.strictEqual(lines[1], '  ; Assets:Cash                $100.00');
+		assert.strictEqual(lines[2], '  ; Income:Salary             -$100.00');
+		assert.strictEqual(lines[3], '');
+		assert.strictEqual(lines[4], '2025-03-02 Another transaction');
+	});
+
+	test('Toggle comment - uncomment previously commented', () => {
+		const testInput = '; 2025-03-01 Test transaction\n  ; Assets:Cash                $100.00\n  ; Income:Salary             -$100.00';
+
+		// Toggle comment on all lines (should uncomment)
+		const result = toggleCommentLines(testInput, 0, 2);
+		const lines = result.split('\n');
+
+		// All lines should be uncommented
+		assert.strictEqual(lines[0], '2025-03-01 Test transaction');
+		assert.strictEqual(lines[1], '  Assets:Cash                $100.00');
+		assert.strictEqual(lines[2], '  Income:Salary             -$100.00');
+	});
+
+	test('Toggle comment - smart block behavior with mixed states', () => {
+		const mixedInput = '; 2025-07-31 * Reconciled - July 2025\n  assets:bank:checking matched statement balance of $96.98\n  ; reconciliation completed Fri Sep 19 16:10:46 EDT 2025';
+
+		// First toggle: should comment all lines (since some are uncommented)
+		const firstToggle = toggleCommentLines(mixedInput, 0, 2);
+		const firstLines = firstToggle.split('\n');
+
+		assert.strictEqual(firstLines[0], '; 2025-07-31 * Reconciled - July 2025');
+		assert.strictEqual(firstLines[1], '  ; assets:bank:checking matched statement balance of $96.98');
+		assert.strictEqual(firstLines[2], '  ; reconciliation completed Fri Sep 19 16:10:46 EDT 2025');
+
+		// Second toggle: should uncomment all lines (since all are now commented)
+		const secondToggle = toggleCommentLines(firstToggle, 0, 2);
+		const secondLines = secondToggle.split('\n');
+
+		assert.strictEqual(secondLines[0], '2025-07-31 * Reconciled - July 2025');
+		assert.strictEqual(secondLines[1], '  assets:bank:checking matched statement balance of $96.98');
+		assert.strictEqual(secondLines[2], '  reconciliation completed Fri Sep 19 16:10:46 EDT 2025');
+	});
+
 	// Helper function to verify all posting lines have exactly 2 spaces of indentation
 	function verifyIndentation(formattedText: string): boolean {
 		const lines = formattedText.split('\n');
