@@ -21,11 +21,17 @@ Account names are highlighted with different colors for each hierarchical level:
   - **Pending (`!`)**: Orange italic for descriptions  
   - **Unreconciled (no marker)**: Red italic for descriptions - makes unreconciled transactions stand out
 - **Amounts**: Numeric amounts with currency symbols are highlighted
+- **Project Tags**: `project: name` or `project:name` tags are highlighted with:
+  - Project keyword in purple bold
+  - Project name in red underline
+  - Can appear on separate lines or within transaction descriptions
 
 ## Example
 ```hledger
 ; This is a comment
-2023-01-01 * Opening Balance
+project: mugsly
+
+2023-01-01 * Opening Balance project:mugsly
     assets:bank:checking:personal        $1000.00
     equity:opening:balances              -$1000.00
 ```
@@ -37,6 +43,7 @@ In this example:
 - `personal` appears in light blue (level 4)
 - The amount `$1000.00` is highlighted
 - The comment is in green italic
+- `project:` appears in purple bold and `mugsly` in red underline
 
 ## Custom Theme
 The extension includes an optional "hledger Color Theme" optimized for viewing journal files with VS Code's dark theme.
@@ -50,6 +57,8 @@ For theme authors, the following TextMate scopes are available:
 - `string.unquoted.description.reconciled.hledger` - Reconciled transaction descriptions
 - `string.unquoted.description.pending.hledger` - Pending transaction descriptions
 - `string.unquoted.description.unreconciled.hledger` - Unreconciled transaction descriptions
+- `keyword.other.project.hledger` - Project tag keyword
+- `entity.name.type.project.hledger` - Project name
 - `entity.name.tag.account.level1.hledger` - First level accounts
 - `entity.name.function.account.level2.hledger` - Second level accounts
 - `variable.parameter.account.level3.hledger` - Third level accounts

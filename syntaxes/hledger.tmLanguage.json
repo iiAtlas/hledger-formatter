@@ -6,6 +6,9 @@
       "include": "#comment"
     },
     {
+      "include": "#project"
+    },
+    {
       "include": "#transaction"
     },
     {
@@ -18,6 +21,22 @@
         {
           "name": "comment.line.semicolon.hledger",
           "match": "^\\s*;.*$"
+        }
+      ]
+    },
+    "project": {
+      "patterns": [
+        {
+          "name": "meta.project.hledger",
+          "match": "^\\s*(project)\\s*:\\s*(.+)$",
+          "captures": {
+            "1": {
+              "name": "keyword.other.project.hledger"
+            },
+            "2": {
+              "name": "entity.name.type.project.hledger"
+            }
+          }
         }
       ]
     },
@@ -34,7 +53,12 @@
               "name": "keyword.operator.status.reconciled.hledger"
             },
             "3": {
-              "name": "string.unquoted.description.reconciled.hledger"
+              "name": "string.unquoted.description.reconciled.hledger",
+              "patterns": [
+                {
+                  "include": "#inline-project"
+                }
+              ]
             }
           }
         },
@@ -49,7 +73,12 @@
               "name": "keyword.operator.status.pending.hledger"
             },
             "3": {
-              "name": "string.unquoted.description.pending.hledger"
+              "name": "string.unquoted.description.pending.hledger",
+              "patterns": [
+                {
+                  "include": "#inline-project"
+                }
+              ]
             }
           }
         },
@@ -61,7 +90,12 @@
               "name": "constant.numeric.date.hledger"
             },
             "2": {
-              "name": "string.unquoted.description.unreconciled.hledger"
+              "name": "string.unquoted.description.unreconciled.hledger",
+              "patterns": [
+                {
+                  "include": "#inline-project"
+                }
+              ]
             }
           }
         }
@@ -120,6 +154,22 @@
           "captures": {
             "0": {
               "name": "constant.numeric.amount.hledger"
+            }
+          }
+        }
+      ]
+    },
+    "inline-project": {
+      "patterns": [
+        {
+          "name": "meta.inline-project.hledger",
+          "match": "\\b(project)\\s*:\\s*([\\w-]+)",
+          "captures": {
+            "1": {
+              "name": "keyword.other.project.hledger"
+            },
+            "2": {
+              "name": "entity.name.type.project.hledger"
             }
           }
         }

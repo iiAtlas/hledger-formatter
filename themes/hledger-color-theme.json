@@ -98,6 +98,22 @@
       "settings": {
         "foreground": "#B5CEA8"
       }
+    },
+    {
+      "name": "Project Keyword",
+      "scope": "keyword.other.project.hledger",
+      "settings": {
+        "foreground": "#C586C0",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "name": "Project Name",
+      "scope": "entity.name.type.project.hledger",
+      "settings": {
+        "foreground": "#E06C75",
+        "fontStyle": "underline"
+      }
     }
   ]
 }

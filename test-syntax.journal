@@ -42,3 +42,22 @@
 2023-02-01 Test Transaction
     expenses:test                        $50.00  ; this is an inline comment
     assets:bank                         -$50.00  ; another comment
+
+; Testing project tags
+project: mugsly
+
+2023-03-01 * Website Development project:mugsly
+    income:consulting                   -$500.00
+    assets:bank:checking                 $500.00
+
+project: client-abc
+
+2023-03-05 Design Work project: client-abc
+    expenses:contractors                  $200.00
+    assets:bank:checking                 -$200.00
+
+; Project tag on separate line
+2023-03-10 * Coffee Meeting
+    project:mugsly
+    expenses:meetings                      $15.00
+    assets:cash                           -$15.00
