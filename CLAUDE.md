@@ -31,10 +31,12 @@ This is a VS Code extension called "hledger-formatter" that formats hledger jour
    - `formatTransaction()` - Formats individual transactions
    - `formatTransactionHeader()` - Normalizes transaction header spacing
    - `toggleCommentLines()` - Toggle comments on selected lines (exported for testing)
+   - `sortHledgerJournal()` - Sorts journal entries by date (exported for testing)
 
 2. **Command Registration**:
    - Manual format command: `hledger-formatter.formatDocument`
    - Comment toggle command: `hledger-formatter.toggleComment` (Cmd+/)
+   - Sort entries command: `hledger-formatter.sortEntries` (Shift+Cmd+S)
    - Format-on-save handler for hledger files
    - Document formatting provider (integrates with VS Code's Format Document)
    - Range formatting provider
@@ -81,6 +83,34 @@ Second toggle (uncomments all):
   reconciliation note         ← now uncommented
 ```
 
+### Sort Entries Logic
+
+The sort entries feature (Shift+Cmd+S) sorts journal transactions by date:
+
+**Key Features:**
+- Sorts all transactions chronologically by date
+- Preserves transaction integrity (keeps posting lines with their headers)
+- Maintains leading comments and empty lines before first transaction
+- Preserves spacing between transactions
+- Handles various date formats (YYYY-MM-DD, YYYY/MM/DD)
+
+**Example:**
+```
+Before:
+2025-03-08 Transaction 2
+  Assets:Cash  $200.00
+  
+2025-03-04 Transaction 1
+  Assets:Cash  $100.00
+
+After:
+2025-03-04 Transaction 1
+  Assets:Cash  $100.00
+  
+2025-03-08 Transaction 2
+  Assets:Cash  $200.00
+```
+
 ### Test Structure
 
 Tests are in `src/test/` with input/output journal pairs:
@@ -96,6 +126,10 @@ Tests are in `src/test/` with input/output journal pairs:
 - `comment_mixed_in.journal` / `comment_mixed_out.journal` - Mixed commented/uncommented lines with smart block behavior
 - `comment_indented_in.journal` / `comment_indented_out.journal` - Complex indentation scenarios
 - Unit tests for smart block behavior with mixed comment states
+
+**Sort Tests:**
+- `sort_in.journal` / `sort_out.journal` - Sorting transactions by date
+- Unit tests for transaction integrity and comment preservation
 
 Test verification includes:
 - Exact output matching
