@@ -23,3 +23,14 @@
 2023-01-20 Rent Payment
     expenses:housing:rent                 $800.00
     assets:bank:checking                 -$800.00
+
+; Testing indented comment within transaction
+2025-07-02 * atlas-playground.xyz domain
+  ; domain renewal, receipt added
+  expenses:software:domains               $11.84
+  equity:owner:contributions             -$11.84
+
+; Testing inline comments after amounts
+2023-02-01 Test Transaction
+    expenses:test                        $50.00  ; this is an inline comment
+    assets:bank                         -$50.00  ; another comment

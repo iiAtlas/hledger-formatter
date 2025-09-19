@@ -17,7 +17,7 @@
       "patterns": [
         {
           "name": "comment.line.semicolon.hledger",
-          "match": ";.*$"
+          "match": "^\\s*;.*$"
         }
       ]
     },
@@ -44,7 +44,7 @@
       "patterns": [
         {
           "name": "meta.posting.hledger",
-          "match": "^\\s+(([^:]+)(?::([^:]+)(?::([^:]+)(?::([^:]+)(?::([^:]+))?)?)?)?(?:\\s+(.*))?)",
+          "match": "^\\s+(([^:;\\s]+)(?::([^:;\\s]+)(?::([^:;\\s]+)(?::([^:;\\s]+)(?::([^:;\\s]+))?)?)?)?(?:\\s+([^;]+))?(\\s*;.*)?$)",
           "captures": {
             "2": {
               "name": "entity.name.tag.account.level1.hledger"
@@ -68,6 +68,9 @@
                   "include": "#amount"
                 }
               ]
+            },
+            "8": {
+              "name": "comment.line.semicolon.hledger"
             }
           }
         }
