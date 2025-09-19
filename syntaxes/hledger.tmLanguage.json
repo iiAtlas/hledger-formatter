@@ -24,17 +24,44 @@
     "transaction": {
       "patterns": [
         {
-          "name": "meta.transaction.hledger",
-          "match": "^(\\d{4}[-/]\\d{2}[-/]\\d{2})(?:\\s+([*!]))?(?:\\s+(.*))?$",
+          "name": "meta.transaction.reconciled.hledger",
+          "match": "^(\\d{4}[-/]\\d{2}[-/]\\d{2})\\s+(\\*)(?:\\s+(.*))?$",
           "captures": {
             "1": {
               "name": "constant.numeric.date.hledger"
             },
             "2": {
-              "name": "keyword.operator.status.hledger"
+              "name": "keyword.operator.status.reconciled.hledger"
             },
             "3": {
-              "name": "string.unquoted.description.hledger"
+              "name": "string.unquoted.description.reconciled.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.transaction.pending.hledger",
+          "match": "^(\\d{4}[-/]\\d{2}[-/]\\d{2})\\s+(!)(?:\\s+(.*))?$",
+          "captures": {
+            "1": {
+              "name": "constant.numeric.date.hledger"
+            },
+            "2": {
+              "name": "keyword.operator.status.pending.hledger"
+            },
+            "3": {
+              "name": "string.unquoted.description.pending.hledger"
+            }
+          }
+        },
+        {
+          "name": "meta.transaction.unreconciled.hledger",
+          "match": "^(\\d{4}[-/]\\d{2}[-/]\\d{2})(?:\\s+([^*!].*))?$",
+          "captures": {
+            "1": {
+              "name": "constant.numeric.date.hledger"
+            },
+            "2": {
+              "name": "string.unquoted.description.unreconciled.hledger"
             }
           }
         }

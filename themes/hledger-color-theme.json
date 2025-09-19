@@ -18,18 +18,42 @@
       }
     },
     {
-      "name": "Transaction Status",
-      "scope": "keyword.operator.status.hledger",
+      "name": "Reconciled Status",
+      "scope": "keyword.operator.status.reconciled.hledger",
       "settings": {
-        "foreground": "#D16969",
+        "foreground": "#6A9955",
         "fontStyle": "bold"
       }
     },
     {
-      "name": "Transaction Description",
-      "scope": "string.unquoted.description.hledger",
+      "name": "Pending Status",
+      "scope": "keyword.operator.status.pending.hledger",
+      "settings": {
+        "foreground": "#FFA500",
+        "fontStyle": "bold"
+      }
+    },
+    {
+      "name": "Reconciled Transaction Description",
+      "scope": "string.unquoted.description.reconciled.hledger",
       "settings": {
         "foreground": "#CE9178"
+      }
+    },
+    {
+      "name": "Pending Transaction Description",
+      "scope": "string.unquoted.description.pending.hledger",
+      "settings": {
+        "foreground": "#FFA500",
+        "fontStyle": "italic"
+      }
+    },
+    {
+      "name": "Unreconciled Transaction Description",
+      "scope": "string.unquoted.description.unreconciled.hledger",
+      "settings": {
+        "foreground": "#FF6B6B",
+        "fontStyle": "italic"
       }
     },
     {

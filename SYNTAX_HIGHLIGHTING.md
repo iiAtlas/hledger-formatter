@@ -14,10 +14,12 @@ Account names are highlighted with different colors for each hierarchical level:
 - **Level 5** (e.g., `apple`): Purple - Additional subcategories
 
 ### Other Syntax Elements
-- **Comments**: Lines starting with `;` are highlighted in green italic
+- **Comments**: Lines starting with `;` are highlighted in green italic (supports indented and inline comments)
 - **Dates**: Transaction dates in `YYYY-MM-DD` or `YYYY/MM/DD` format
-- **Transaction Status**: `*` (cleared) and `!` (pending) markers are highlighted
-- **Transaction Descriptions**: Text after the date/status
+- **Transaction Status & Descriptions**:
+  - **Reconciled (`*`)**: Normal color for descriptions
+  - **Pending (`!`)**: Orange italic for descriptions  
+  - **Unreconciled (no marker)**: Red italic for descriptions - makes unreconciled transactions stand out
 - **Amounts**: Numeric amounts with currency symbols are highlighted
 
 ## Example
@@ -43,8 +45,11 @@ The extension includes an optional "hledger Color Theme" optimized for viewing j
 For theme authors, the following TextMate scopes are available:
 - `comment.line.semicolon.hledger` - Comments
 - `constant.numeric.date.hledger` - Transaction dates
-- `keyword.operator.status.hledger` - Status markers (* or !)
-- `string.unquoted.description.hledger` - Transaction descriptions
+- `keyword.operator.status.reconciled.hledger` - Reconciled status marker (*)
+- `keyword.operator.status.pending.hledger` - Pending status marker (!)
+- `string.unquoted.description.reconciled.hledger` - Reconciled transaction descriptions
+- `string.unquoted.description.pending.hledger` - Pending transaction descriptions
+- `string.unquoted.description.unreconciled.hledger` - Unreconciled transaction descriptions
 - `entity.name.tag.account.level1.hledger` - First level accounts
 - `entity.name.function.account.level2.hledger` - Second level accounts
 - `variable.parameter.account.level3.hledger` - Third level accounts
