@@ -1,0 +1,180 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "hledger",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#project"
+    },
+    {
+      "include": "#transaction"
+    },
+    {
+      "include": "#posting"
+    }
+  ],
+  "repository": {
+    "comment": {
+      "patterns": [
+        {
+          "name": "comment.line.semicolon.hledger",
+          "match": "^\\s*;.*$"
+        }
+      ]
+    },
+    "project": {
+      "patterns": [
+        {
+          "name": "meta.project.hledger",
+          "match": "^\\s*(project)\\s*:\\s*(.+)$",
+          "captures": {
+            "1": {
+              "name": "keyword.other.project.hledger"
+            },
+            "2": {
+              "name": "entity.name.type.project.hledger"
+            }
+          }
+        }
+      ]
+    },
+    "transaction": {
+      "patterns": [
+        {
+          "name": "meta.transaction.reconciled.hledger",
+          "match": "^(\\d{4}[-/]\\d{2}[-/]\\d{2})\\s+(\\*)(?:\\s+(.*))?$",
+          "captures": {
+            "1": {
+              "name": "constant.numeric.date.hledger"
+            },
+            "2": {
+              "name": "keyword.operator.status.reconciled.hledger"
+            },
+            "3": {
+              "name": "string.unquoted.description.reconciled.hledger",
+              "patterns": [
+                {
+                  "include": "#inline-project"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "meta.transaction.pending.hledger",
+          "match": "^(\\d{4}[-/]\\d{2}[-/]\\d{2})\\s+(!)(?:\\s+(.*))?$",
+          "captures": {
+            "1": {
+              "name": "constant.numeric.date.hledger"
+            },
+            "2": {
+              "name": "keyword.operator.status.pending.hledger"
+            },
+            "3": {
+              "name": "string.unquoted.description.pending.hledger",
+              "patterns": [
+                {
+                  "include": "#inline-project"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "meta.transaction.unreconciled.hledger",
+          "match": "^(\\d{4}[-/]\\d{2}[-/]\\d{2})(?:\\s+([^*!].*))?$",
+          "captures": {
+            "1": {
+              "name": "constant.numeric.date.hledger"
+            },
+            "2": {
+              "name": "string.unquoted.description.unreconciled.hledger",
+              "patterns": [
+                {
+                  "include": "#inline-project"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "posting": {
+      "patterns": [
+        {
+          "name": "meta.posting.hledger",
+          "match": "^\\s+(([^:;\\s]+)(?::([^:;\\s]+)(?::([^:;\\s]+)(?::([^:;\\s]+)(?::([^:;\\s]+))?)?)?)?(?:\\s+([^;]+))?(\\s*;.*)?$)",
+          "captures": {
+            "2": {
+              "name": "entity.name.tag.account.level1.hledger"
+            },
+            "3": {
+              "name": "entity.name.function.account.level2.hledger"
+            },
+            "4": {
+              "name": "variable.parameter.account.level3.hledger"
+            },
+            "5": {
+              "name": "storage.type.account.level4.hledger"
+            },
+            "6": {
+              "name": "keyword.control.account.level5.hledger"
+            },
+            "7": {
+              "name": "meta.amount.hledger",
+              "patterns": [
+                {
+                  "include": "#amount"
+                }
+              ]
+            },
+            "8": {
+              "name": "comment.line.semicolon.hledger"
+            }
+          }
+        }
+      ]
+    },
+    "amount": {
+      "patterns": [
+        {
+          "name": "constant.numeric.currency.hledger",
+          "match": "[-]?\\$[-]?[0-9]+(?:[.,][0-9]+)?",
+          "captures": {
+            "0": {
+              "name": "constant.numeric.amount.hledger"
+            }
+          }
+        },
+        {
+          "name": "constant.numeric.amount.hledger",
+          "match": "[-]?[0-9]+(?:[.,][0-9]+)?(?:\\s+[A-Z]{3,})?",
+          "captures": {
+            "0": {
+              "name": "constant.numeric.amount.hledger"
+            }
+          }
+        }
+      ]
+    },
+    "inline-project": {
+      "patterns": [
+        {
+          "name": "meta.inline-project.hledger",
+          "match": "\\b(project)\\s*:\\s*([\\w-]+)",
+          "captures": {
+            "1": {
+              "name": "keyword.other.project.hledger"
+            },
+            "2": {
+              "name": "entity.name.type.project.hledger"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "scopeName": "source.hledger"
+}

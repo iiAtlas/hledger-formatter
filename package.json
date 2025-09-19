@@ -30,6 +30,20 @@
         "configuration": "./language-configuration.json"
       }
     ],
+    "grammars": [
+      {
+        "language": "hledger",
+        "scopeName": "source.hledger",
+        "path": "./syntaxes/hledger.tmLanguage.json"
+      }
+    ],
+    "themes": [
+      {
+        "label": "hledger Color Theme",
+        "uiTheme": "vs-dark",
+        "path": "./themes/hledger-color-theme.json"
+      }
+    ],
     "commands": [
       {
         "command": "hledger-formatter.formatDocument",

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a VS Code extension called "hledger-formatter" that formats hledger journal files by aligning account names and amounts. It supports `.journal`, `.hledger`, and `.ledger` file extensions.
+This is a VS Code extension called "hledger-formatter" that formats hledger journal files by aligning account names and amounts. It supports `.journal`, `.hledger`, and `.ledger` file extensions and provides comprehensive syntax highlighting.
 
 ## Development Commands
 
@@ -40,6 +40,14 @@ This is a VS Code extension called "hledger-formatter" that formats hledger jour
    - Format-on-save handler for hledger files
    - Document formatting provider (integrates with VS Code's Format Document)
    - Range formatting provider
+
+3. **Syntax Highlighting** (`syntaxes/hledger.tmLanguage.json`):
+   - TextMate grammar for comprehensive syntax highlighting
+   - Hierarchical account coloring (up to 5 levels)
+   - Transaction status differentiation (reconciled/pending/unreconciled)
+   - Project tag support (`project: name` or `project:name`)
+   - Comment highlighting (including indented and inline comments)
+   - Amount and date highlighting
 
 ### Formatting Logic
 
@@ -111,6 +119,33 @@ After:
   Assets:Cash  $200.00
 ```
 
+### Syntax Highlighting Features
+
+The extension provides rich syntax highlighting with distinct colors for:
+
+**Account Categories**: Each hierarchy level gets a unique color
+- Level 1 (assets, expenses): Bold blue
+- Level 2 (bank, food): Teal
+- Level 3 (checking, groceries): Yellow
+- Level 4 (personal, produce): Light blue
+- Level 5: Purple
+
+**Transaction Status**: Visual differentiation for transaction states
+- Reconciled (`*`): Normal coloring
+- Pending (`!`): Orange italic
+- Unreconciled (no marker): Red italic - helps identify transactions needing reconciliation
+
+**Project Tags**: Support for project tracking
+- Format: `project: name` or `project:name`
+- Can appear on separate lines or inline within descriptions
+- Project keyword: Purple bold
+- Project name: Bright blue bold italic
+
+**Other Elements**:
+- Comments: Green italic (supports indented and inline)
+- Dates: Highlighted in YYYY-MM-DD or YYYY/MM/DD format
+- Amounts: Numeric values with proper currency formatting
+
 ### Test Structure
 
 Tests are in `src/test/` with input/output journal pairs:
@@ -131,6 +166,9 @@ Tests are in `src/test/` with input/output journal pairs:
 - `sort_in.journal` / `sort_out.journal` - Sorting transactions by date
 - Unit tests for transaction integrity and comment preservation
 
+**Syntax Highlighting Tests:**
+- `test-syntax.journal` - Comprehensive syntax highlighting examples including all supported features
+
 Test verification includes:
 - Exact output matching
 - Decimal point alignment within transactions
@@ -138,6 +176,8 @@ Test verification includes:
 - Proper negative amount format (-$X.XX)
 - Smart block comment toggle behavior with preserved indentation
 - Mixed comment state handling (comment all → uncomment all cycle)
+- Syntax highlighting for all supported elements
+- Correct chronological sorting of transactions
 
 ## Configuration
 
@@ -151,3 +191,6 @@ The extension provides one setting:
 - Transaction boundary detection using date regex: `/^\d{4}[/-]\d{2}[/-]\d{2}/`
 - Supports transaction status markers (`*`, `!`)
 - Preserves comments within transactions
+- Comprehensive TextMate grammar for syntax highlighting
+- Theme contribution with optimized colors for hledger files
+- Transaction sorting with preservation of structure and comments
