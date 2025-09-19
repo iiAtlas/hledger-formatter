@@ -37,7 +37,7 @@ This is a VS Code extension called "hledger-formatter" that formats hledger jour
    - Manual format command: `hledger-formatter.formatDocument`
    - Comment toggle command: `hledger-formatter.toggleComment` (Cmd+/)
    - Sort entries command: `hledger-formatter.sortEntries` (Shift+Cmd+S)
-   - Format-on-save handler for hledger files
+   - Format-on-save handler for hledger files (includes optional sort-on-save)
    - Document formatting provider (integrates with VS Code's Format Document)
    - Range formatting provider
 
@@ -93,7 +93,7 @@ Second toggle (uncomments all):
 
 ### Sort Entries Logic
 
-The sort entries feature (Shift+Cmd+S) sorts journal transactions by date:
+The sort entries feature can be used manually (Shift+Cmd+S) or automatically on save:
 
 **Key Features:**
 - Sorts all transactions chronologically by date
@@ -101,6 +101,8 @@ The sort entries feature (Shift+Cmd+S) sorts journal transactions by date:
 - Maintains leading comments and empty lines before first transaction
 - Preserves spacing between transactions
 - Handles various date formats (YYYY-MM-DD, YYYY/MM/DD)
+- When `sortOnSave` is enabled, sorting happens before formatting on save
+- Works independently or in combination with `formatOnSave`
 
 **Example:**
 ```
@@ -181,8 +183,9 @@ Test verification includes:
 
 ## Configuration
 
-The extension provides one setting:
+The extension provides the following settings:
 - `hledger-formatter.formatOnSave` (boolean, default: true) - Auto-format on file save
+- `hledger-formatter.sortOnSave` (boolean, default: true) - Sort journal entries by date on save
 
 ## Key Implementation Details
 

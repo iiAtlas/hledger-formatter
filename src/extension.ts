@@ -51,24 +51,38 @@ export function activate(context: vscode.ExtensionContext) {
 	const formatOnSaveDisposable = vscode.workspace.onWillSaveTextDocument((event) => {
 		const document = event.document;
 		
-		// Check if this is a hledger journal file and if format on save is enabled
-		if ((document.fileName.endsWith('.journal') || 
-			 document.fileName.endsWith('.hledger') || 
-			 document.fileName.endsWith('.ledger')) && 
-			vscode.workspace.getConfiguration('hledger-formatter').get('formatOnSave', true)) {
+		// Check if this is a hledger journal file
+		if (document.fileName.endsWith('.journal') || 
+			document.fileName.endsWith('.hledger') || 
+			document.fileName.endsWith('.ledger')) {
 			
-			const text = document.getText();
-			const formattedText = formatHledgerJournal(text);
+			const config = vscode.workspace.getConfiguration('hledger-formatter');
+			const formatOnSave = config.get('formatOnSave', true);
+			const sortOnSave = config.get('sortOnSave', true);
 			
-			event.waitUntil(Promise.resolve([
-				new vscode.TextEdit(
-					new vscode.Range(
-						document.positionAt(0),
-						document.positionAt(text.length)
-					),
-					formattedText
-				)
-			]));
+			if (formatOnSave || sortOnSave) {
+				let text = document.getText();
+				
+				// Apply sorting first if enabled
+				if (sortOnSave) {
+					text = sortHledgerJournal(text);
+				}
+				
+				// Apply formatting if enabled
+				if (formatOnSave) {
+					text = formatHledgerJournal(text);
+				}
+				
+				event.waitUntil(Promise.resolve([
+					new vscode.TextEdit(
+						new vscode.Range(
+							document.positionAt(0),
+							document.positionAt(document.getText().length)
+						),
+						text
+					)
+				]));
+			}
 		}
 	});
 
