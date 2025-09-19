@@ -69,6 +69,11 @@
           "type": "boolean",
           "default": true,
           "description": "Format hledger journal files on save"
+        },
+        "hledger-formatter.sortOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Sort hledger journal entries by date on save"
         }
       }
     },

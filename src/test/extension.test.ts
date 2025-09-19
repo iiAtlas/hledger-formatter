@@ -319,6 +319,59 @@ suite('Hledger Formatter Tests', () => {
 		assert.ok(lines[9].includes('$300.00'), 'Third transaction should have $300.00');
 	});
 
+	test('Sort on save with formatting', () => {
+		// Test data with unsorted transactions and poor formatting
+		const unsortedInput = `; This is a header comment
+; It should be preserved
+
+2025-03-08 Later transaction
+  Assets:Cash    $200.00
+  Income:Sales              -$200.00
+
+2025-03-04 Earlier transaction
+  Assets:Cash  $100.00
+  Income:Sales       -$100.00
+
+2025-03-06 Middle transaction
+  Assets:Cash           $150.00
+  Income:Sales   -$150.00`;
+
+		// First sort, then format (as the extension does with sortOnSave enabled)
+		const sorted = sortHledgerJournal(unsortedInput);
+		const formattedAndSorted = formatHledgerJournal(sorted);
+		
+		// Verify the transactions are in the correct order
+		const lines = formattedAndSorted.split('\n');
+		
+		// Find transaction dates in the output
+		const dates: string[] = [];
+		for (const line of lines) {
+			const dateMatch = line.match(/^(\d{4}-\d{2}-\d{2})/);
+			if (dateMatch) {
+				dates.push(dateMatch[1]);
+			}
+		}
+		
+		// Verify dates are sorted
+		assert.strictEqual(dates.length, 3, 'Should have 3 transactions');
+		assert.strictEqual(dates[0], '2025-03-04', 'First transaction should be earliest date');
+		assert.strictEqual(dates[1], '2025-03-06', 'Second transaction should be middle date');
+		assert.strictEqual(dates[2], '2025-03-08', 'Third transaction should be latest date');
+		
+		// Verify leading comments are preserved
+		assert.strictEqual(lines[0], '; This is a header comment');
+		assert.strictEqual(lines[1], '; It should be preserved');
+		
+		// Verify formatting is correct (amounts aligned at column 42)
+		const amountLines = lines.filter(line => line.includes('$'));
+		for (const line of amountLines) {
+			const dollarIndex = line.indexOf('$');
+			// Amount column should be consistent (around 42 chars from left)
+			assert.ok(dollarIndex >= 40 && dollarIndex <= 44, 
+				`Amount should be aligned around column 42, got ${dollarIndex}: ${line}`);
+		}
+	});
+
 	test('Sort preserves comments at beginning', () => {
 		const testInput = `; File header comment
 ; This should stay at the top

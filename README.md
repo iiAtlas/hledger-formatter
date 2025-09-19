@@ -9,7 +9,10 @@ A VS Code extension to format spacing in hledger journal files.
 - Removes any blank lines at the start of the file
 - Format on demand with keyboard shortcut (Shift+Alt+F)
 - Format on save option (enabled by default)
+- Sort journal entries by date (Shift+Cmd+S)
+- Sort on save option (enabled by default)
 - Context menu option to format hledger files
+- Toggle comment lines (Cmd+/)
 
 ## Supported File Types
 
@@ -30,6 +33,7 @@ A VS Code extension to format spacing in hledger journal files.
 This extension contributes the following settings:
 
 * `hledger-formatter.formatOnSave`: Enable/disable formatting on save (default: true)
+* `hledger-formatter.sortOnSave`: Enable/disable sorting entries by date on save (default: true)
 
 ## Example
 
