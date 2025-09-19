@@ -1,0 +1,6 @@
+; 2025-03-01 Test transaction
+  ; Assets:Cash                             $100.00
+  ; Income:Salary                          -$100.00
+
+; !include other.journal
+; include accounts.journal

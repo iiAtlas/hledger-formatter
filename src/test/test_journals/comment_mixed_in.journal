@@ -1,0 +1,15 @@
+2025-03-01 Regular transaction
+  Assets:Cash                             $100.00
+  Income:Salary                          -$100.00
+
+; 2025-03-02 Already commented transaction
+;   Expenses:Food                        $25.00
+;   Assets:Cash                         -$25.00
+
+2025-03-03 Partially commented
+  ; This line is already commented
+  Assets:Bank                             $50.00
+  Expenses:Utils                         -$50.00
+
+!include important.journal
+; !include already-commented.journal

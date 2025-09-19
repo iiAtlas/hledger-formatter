@@ -113,7 +113,7 @@ export function activate(context: vscode.ExtensionContext) {
 				// A more advanced implementation could format just the selected transactions
 				const text = document.getText();
 				const formattedText = formatHledgerJournal(text);
-				
+
 				return [
 					new vscode.TextEdit(
 						new vscode.Range(
@@ -127,7 +127,77 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	);
 
-	context.subscriptions.push(formatCommand, formatOnSaveDisposable, formatterProvider, rangeFormatterProvider);
+	// Toggle comment command for hledger files
+	const toggleCommentCommand = vscode.commands.registerCommand('hledger-formatter.toggleComment', () => {
+		const editor = vscode.window.activeTextEditor;
+
+		if (!editor) {
+			return;
+		}
+
+		const document = editor.document;
+
+		// Check if this is a hledger journal file
+		if (!document.fileName.endsWith('.journal') &&
+			!document.fileName.endsWith('.hledger') &&
+			!document.fileName.endsWith('.ledger')) {
+			return;
+		}
+
+		const selection = editor.selection;
+		const startLine = selection.start.line;
+		const endLine = selection.end.line;
+		const text = document.getText();
+
+		const modifiedText = toggleCommentLines(text, startLine, endLine);
+
+		editor.edit((editBuilder) => {
+			const fullRange = new vscode.Range(
+				document.positionAt(0),
+				document.positionAt(text.length)
+			);
+			editBuilder.replace(fullRange, modifiedText);
+		});
+	});
+
+	// Sort journal entries command
+	const sortCommand = vscode.commands.registerCommand('hledger-formatter.sortEntries', () => {
+		const editor = vscode.window.activeTextEditor;
+
+		if (!editor) {
+			vscode.window.showInformationMessage('No active editor found.');
+			return;
+		}
+
+		const document = editor.document;
+
+		// Check if this is a hledger journal file
+		if (!document.fileName.endsWith('.journal') &&
+			!document.fileName.endsWith('.hledger') &&
+			!document.fileName.endsWith('.ledger')) {
+			vscode.window.showInformationMessage('Not a hledger journal file.');
+			return;
+		}
+
+		const text = document.getText();
+		const sortedText = sortHledgerJournal(text);
+
+		editor.edit((editBuilder) => {
+			const fullRange = new vscode.Range(
+				document.positionAt(0),
+				document.positionAt(text.length)
+			);
+			editBuilder.replace(fullRange, sortedText);
+		}).then(success => {
+			if (success) {
+				vscode.window.showInformationMessage('Journal entries sorted by date.');
+			} else {
+				vscode.window.showErrorMessage('Failed to sort journal entries.');
+			}
+		});
+	});
+
+	context.subscriptions.push(formatCommand, formatOnSaveDisposable, formatterProvider, rangeFormatterProvider, toggleCommentCommand, sortCommand);
 }
 
 /**
@@ -347,6 +417,220 @@ function formatTransactionHeader(headerLine: string): string {
 	
 	// If no match, return the original line
 	return headerLine;
+}
+
+/**
+ * Sorts journal entries by date
+ * @param text The original journal text
+ * @returns The journal text with entries sorted by date
+ */
+export function sortHledgerJournal(text: string): string {
+	const parsed = parseTransactionsWithLeading(text);
+	
+	// Sort transactions by date
+	parsed.transactions.sort((a, b) => {
+		if (a.date < b.date) { return -1; }
+		if (a.date > b.date) { return 1; }
+		return 0;
+	});
+	
+	// Rebuild the text from sorted transactions
+	const result: string[] = [];
+	
+	// Add leading content if any
+	if (parsed.leadingContent) {
+		result.push(parsed.leadingContent);
+		if (parsed.transactions.length > 0) {
+			result.push(''); // Add empty line between leading content and transactions
+		}
+	}
+	
+	// Add sorted transactions
+	for (let i = 0; i < parsed.transactions.length; i++) {
+		result.push(parsed.transactions[i].content);
+		
+		// Add empty line between transactions, but not after the last one
+		if (i < parsed.transactions.length - 1 && !parsed.transactions[i].content.endsWith('\n\n')) {
+			result.push('');
+		}
+	}
+	
+	// Handle case where original text ended with a newline
+	let finalText = result.join('\n');
+	if (text.endsWith('\n') && !finalText.endsWith('\n')) {
+		finalText += '\n';
+	}
+	
+	return finalText;
+}
+
+/**
+ * Parses journal text into individual transactions with their dates
+ * Also returns leading content (comments/empty lines before first transaction)
+ * @param text The journal text to parse
+ * @returns Object with leading content and array of transactions
+ */
+function parseTransactionsWithLeading(text: string): { 
+	leadingContent: string; 
+	transactions: Array<{ date: string; content: string }> 
+} {
+	const lines = text.split('\n');
+	const transactions: Array<{ date: string; content: string }> = [];
+	
+	let currentTransaction: string[] = [];
+	let currentDate = '';
+	let leadingLines: string[] = [];
+	let inTransaction = false;
+	let hasSeenTransaction = false;
+	
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i];
+		
+		// Check if this is a transaction header (date at the beginning)
+		const dateMatch = line.match(/^(\d{4}[/-]\d{2}[/-]\d{2})/);
+		
+		if (dateMatch) {
+			hasSeenTransaction = true;
+			// If we had a previous transaction, save it
+			if (inTransaction && currentTransaction.length > 0) {
+				transactions.push({
+					date: currentDate,
+					content: currentTransaction.join('\n')
+				});
+			}
+			
+			// Start new transaction
+			currentDate = dateMatch[1];
+			currentTransaction = [line];
+			inTransaction = true;
+		} else if (inTransaction) {
+			// Check if this is an empty line
+			if (!line.trim()) {
+				// Empty line might end the transaction
+				// But we need to check if the next non-empty line is a new transaction
+				let nextTransactionFound = false;
+				for (let j = i + 1; j < lines.length; j++) {
+					if (lines[j].trim()) {
+						// Found next non-empty line
+						if (/^\d{4}[/-]\d{2}[/-]\d{2}/.test(lines[j])) {
+							nextTransactionFound = true;
+						}
+						break;
+					}
+				}
+				
+				if (nextTransactionFound) {
+					// End current transaction
+					transactions.push({
+						date: currentDate,
+						content: currentTransaction.join('\n')
+					});
+					currentTransaction = [];
+					inTransaction = false;
+				} else {
+					// Empty line is part of the transaction
+					currentTransaction.push(line);
+				}
+			} else {
+				// Part of the current transaction
+				currentTransaction.push(line);
+			}
+		} else if (!hasSeenTransaction) {
+			// Not in a transaction and haven't seen any transactions yet
+			// These are leading lines to preserve at the beginning
+			leadingLines.push(line);
+		}
+	}
+	
+	// Save the last transaction if any
+	if (inTransaction && currentTransaction.length > 0) {
+		transactions.push({
+			date: currentDate,
+			content: currentTransaction.join('\n')
+		});
+	}
+	
+	// Remove trailing empty lines from leading content
+	while (leadingLines.length > 0 && !leadingLines[leadingLines.length - 1].trim()) {
+		leadingLines.pop();
+	}
+	
+	return {
+		leadingContent: leadingLines.join('\n'),
+		transactions
+	};
+}
+
+/**
+ * Helper function for backwards compatibility
+ */
+function parseTransactions(text: string): Array<{ date: string; content: string }> {
+	return parseTransactionsWithLeading(text).transactions;
+}
+
+/**
+ * Toggles comments on specified lines of hledger journal text
+ * @param text The original journal text
+ * @param startLine Zero-based start line number
+ * @param endLine Zero-based end line number
+ * @returns The text with comments toggled on the specified lines
+ */
+export function toggleCommentLines(text: string, startLine: number, endLine: number): string {
+	const lines = text.split('\n');
+
+	// First pass: Analyze the selection to determine action
+	let hasUncommentedLines = false;
+
+	for (let lineNumber = startLine; lineNumber <= endLine && lineNumber < lines.length; lineNumber++) {
+		const lineText = lines[lineNumber];
+
+		// Skip empty lines in analysis
+		if (!lineText.trim()) {
+			continue;
+		}
+
+		// Check if line is commented (with preserved indentation)
+		const commentMatch = lineText.match(/^(\s*); (.*)$/);
+
+		if (!commentMatch) {
+			// Found an uncommented non-empty line
+			hasUncommentedLines = true;
+			break;
+		}
+	}
+
+	// Second pass: Apply consistent action to all lines
+	for (let lineNumber = startLine; lineNumber <= endLine && lineNumber < lines.length; lineNumber++) {
+		const lineText = lines[lineNumber];
+
+		// Skip empty lines
+		if (!lineText.trim()) {
+			continue;
+		}
+
+		// Check if line is commented (with preserved indentation)
+		const commentMatch = lineText.match(/^(\s*); (.*)$/);
+
+		if (hasUncommentedLines) {
+			// Comment all lines (including already commented ones)
+			if (!commentMatch) {
+				// Line is not commented, so comment it
+				const leadingWhitespace = lineText.match(/^\s*/)?.[0] || '';
+				const restOfLine = lineText.substring(leadingWhitespace.length);
+				lines[lineNumber] = `${leadingWhitespace}; ${restOfLine}`;
+			}
+			// If line is already commented, leave it as-is
+		} else {
+			// Uncomment all lines (all lines should be commented at this point)
+			if (commentMatch) {
+				// Uncomment: restore original whitespace and content
+				const [, leadingWhitespace, content] = commentMatch;
+				lines[lineNumber] = `${leadingWhitespace}${content}`;
+			}
+		}
+	}
+
+	return lines.join('\n');
 }
 
 // This method is called when your extension is deactivated

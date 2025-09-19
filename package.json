@@ -34,6 +34,14 @@
       {
         "command": "hledger-formatter.formatDocument",
         "title": "Format hledger Journal"
+      },
+      {
+        "command": "hledger-formatter.toggleComment",
+        "title": "Toggle Comment"
+      },
+      {
+        "command": "hledger-formatter.sortEntries",
+        "title": "Sort Journal Entries by Date"
       }
     ],
     "configuration": {
@@ -50,6 +58,16 @@
       {
         "command": "hledger-formatter.formatDocument",
         "key": "shift+alt+f",
+        "when": "editorTextFocus && (resourceExtname == .journal || resourceExtname == .hledger || resourceExtname == .ledger)"
+      },
+      {
+        "command": "hledger-formatter.toggleComment",
+        "key": "cmd+/",
+        "when": "editorTextFocus && (resourceExtname == .journal || resourceExtname == .hledger || resourceExtname == .ledger)"
+      },
+      {
+        "command": "hledger-formatter.sortEntries",
+        "key": "shift+cmd+s",
         "when": "editorTextFocus && (resourceExtname == .journal || resourceExtname == .hledger || resourceExtname == .ledger)"
       }
     ],
