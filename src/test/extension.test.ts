@@ -3,8 +3,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-// Import the formatter and comment functions directly for testing
-import { formatHledgerJournal, toggleCommentLines } from '../extension';
+// Import the formatter, comment, and sort functions directly for testing
+import { formatHledgerJournal, toggleCommentLines, sortHledgerJournal } from '../extension';
 
 suite('Hledger Formatter Tests', () => {
 	vscode.window.showInformationMessage('Running hledger formatter tests');
@@ -247,6 +247,74 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(secondLines[0], '2025-07-31 * Reconciled - July 2025');
 		assert.strictEqual(secondLines[1], '  assets:bank:checking matched statement balance of $96.98');
 		assert.strictEqual(secondLines[2], '  reconciliation completed Fri Sep 19 16:10:46 EDT 2025');
+	});
+
+	test('Sort journal entries by date', () => {
+		// Read input and expected output files
+		const inputJournal = readTestFile('sort_in.journal');
+		const expectedOutput = readTestFile('sort_out.journal');
+
+		// Sort the input journal
+		const sortedJournal = sortHledgerJournal(inputJournal);
+
+		// Normalize both texts to handle line endings and whitespace
+		const normalizedSorted = normalizeText(sortedJournal);
+		const normalizedExpected = normalizeText(expectedOutput);
+
+		// Verify the sorted output matches the expected output
+		assert.strictEqual(normalizedSorted, normalizedExpected,
+			'Sorted journal should match expected output');
+	});
+
+	test('Sort maintains transaction integrity', () => {
+		const testInput = `2025-03-10 Transaction 3
+  Assets:Cash                $300.00
+  Income:Sales              -$300.00
+
+2025-03-05 Transaction 2
+  Assets:Cash                $200.00
+  Income:Sales              -$200.00
+
+2025-03-01 Transaction 1
+  Assets:Cash                $100.00
+  Income:Sales              -$100.00`;
+
+		const sorted = sortHledgerJournal(testInput);
+		const lines = sorted.split('\n');
+
+		// Verify transactions are in correct order
+		assert.ok(lines[0].includes('2025-03-01'), 'First transaction should be March 1');
+		assert.ok(lines[4].includes('2025-03-05'), 'Second transaction should be March 5');
+		assert.ok(lines[8].includes('2025-03-10'), 'Third transaction should be March 10');
+
+		// Verify transaction integrity (postings stay with their headers)
+		assert.ok(lines[1].includes('$100.00'), 'First transaction should have $100.00');
+		assert.ok(lines[5].includes('$200.00'), 'Second transaction should have $200.00');
+		assert.ok(lines[9].includes('$300.00'), 'Third transaction should have $300.00');
+	});
+
+	test('Sort preserves comments at beginning', () => {
+		const testInput = `; File header comment
+; This should stay at the top
+
+2025-03-05 Transaction 2
+  Assets:Cash                $200.00
+  Income:Sales              -$200.00
+
+2025-03-01 Transaction 1
+  Assets:Cash                $100.00
+  Income:Sales              -$100.00`;
+
+		const sorted = sortHledgerJournal(testInput);
+		const lines = sorted.split('\n');
+
+		// Verify header comments are preserved
+		assert.strictEqual(lines[0], '; File header comment');
+		assert.strictEqual(lines[1], '; This should stay at the top');
+
+		// Verify transactions are sorted after comments
+		assert.ok(lines[3].includes('2025-03-01'), 'First transaction should be March 1');
+		assert.ok(lines[7].includes('2025-03-05'), 'Second transaction should be March 5');
 	});
 
 	// Helper function to verify all posting lines have exactly 2 spaces of indentation
