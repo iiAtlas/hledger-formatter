@@ -30,9 +30,11 @@ This is a VS Code extension called "hledger-formatter" that formats hledger jour
    - `formatHledgerJournal()` - Main formatting function (exported for testing)
    - `formatTransaction()` - Formats individual transactions
    - `formatTransactionHeader()` - Normalizes transaction header spacing
+   - `toggleCommentLines()` - Toggle comments on selected lines (exported for testing)
 
 2. **Command Registration**:
    - Manual format command: `hledger-formatter.formatDocument`
+   - Comment toggle command: `hledger-formatter.toggleComment` (Cmd+/)
    - Format-on-save handler for hledger files
    - Document formatting provider (integrates with VS Code's Format Document)
    - Range formatting provider
@@ -45,19 +47,35 @@ The formatter aligns all amounts to a fixed column position (42 characters from 
 - Preserves comments and transaction structure
 - Normalizes transaction header spacing
 
+### Comment Toggle Logic
+
+The comment toggle feature (Cmd+/) preserves indentation and follows hledger conventions:
+- Adds `; ` after existing indentation rather than at line start
+- Transaction headers: `2025-03-01 Transaction` → `; 2025-03-01 Transaction`
+- Posting lines: `  Assets:Cash  $100.00` → `  ; Assets:Cash  $100.00`
+- Maintains visual hierarchy when commenting/uncommenting
+
 ### Test Structure
 
 Tests are in `src/test/` with input/output journal pairs:
+
+**Formatting Tests:**
 - `test_1_in.journal` / `test_1_out.journal` - Basic formatting
 - `sample_in.journal` / `sample_out.journal` - Negative amounts handling
 - `inconsistent_indents_in.journal` / `inconsistent_indents_out.journal` - Indentation correction
 - `negative_amounts_in.journal` / `negative_amounts_out.journal` - Negative amount alignment
+
+**Comment Toggle Tests:**
+- `comment_simple_in.journal` / `comment_simple_out.journal` - Basic comment toggling
+- `comment_mixed_in.journal` / `comment_mixed_out.journal` - Mixed commented/uncommented lines
+- `comment_indented_in.journal` / `comment_indented_out.journal` - Complex indentation scenarios
 
 Test verification includes:
 - Exact output matching
 - Decimal point alignment within transactions
 - Consistent 2-space indentation
 - Proper negative amount format (-$X.XX)
+- Comment toggle behavior with preserved indentation
 
 ## Configuration
 
