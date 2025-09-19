@@ -229,6 +229,26 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(lines[2], '  Income:Salary             -$100.00');
 	});
 
+	test('Toggle comment - smart block behavior with mixed states', () => {
+		const mixedInput = '; 2025-07-31 * Reconciled - July 2025\n  assets:bank:checking matched statement balance of $96.98\n  ; reconciliation completed Fri Sep 19 16:10:46 EDT 2025';
+
+		// First toggle: should comment all lines (since some are uncommented)
+		const firstToggle = toggleCommentLines(mixedInput, 0, 2);
+		const firstLines = firstToggle.split('\n');
+
+		assert.strictEqual(firstLines[0], '; 2025-07-31 * Reconciled - July 2025');
+		assert.strictEqual(firstLines[1], '  ; assets:bank:checking matched statement balance of $96.98');
+		assert.strictEqual(firstLines[2], '  ; reconciliation completed Fri Sep 19 16:10:46 EDT 2025');
+
+		// Second toggle: should uncomment all lines (since all are now commented)
+		const secondToggle = toggleCommentLines(firstToggle, 0, 2);
+		const secondLines = secondToggle.split('\n');
+
+		assert.strictEqual(secondLines[0], '2025-07-31 * Reconciled - July 2025');
+		assert.strictEqual(secondLines[1], '  assets:bank:checking matched statement balance of $96.98');
+		assert.strictEqual(secondLines[2], '  reconciliation completed Fri Sep 19 16:10:46 EDT 2025');
+	});
+
 	// Helper function to verify all posting lines have exactly 2 spaces of indentation
 	function verifyIndentation(formattedText: string): boolean {
 		const lines = formattedText.split('\n');
