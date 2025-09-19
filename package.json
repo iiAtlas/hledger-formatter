@@ -56,6 +56,10 @@
       {
         "command": "hledger-formatter.sortEntries",
         "title": "Sort Journal Entries by Date"
+      },
+      {
+        "command": "hledger-formatter.newFile",
+        "title": "New hledger Journal File"
       }
     ],
     "configuration": {
@@ -87,6 +91,11 @@
       {
         "command": "hledger-formatter.sortEntries",
         "key": "shift+cmd+s",
+        "when": "editorTextFocus && (resourceExtname == .journal || resourceExtname == .hledger || resourceExtname == .ledger)"
+      },
+      {
+        "command": "hledger-formatter.newFile",
+        "key": "cmd+n",
         "when": "editorTextFocus && (resourceExtname == .journal || resourceExtname == .hledger || resourceExtname == .ledger)"
       }
     ],

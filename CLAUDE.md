@@ -37,6 +37,7 @@ This is a VS Code extension called "hledger-formatter" that formats hledger jour
    - Manual format command: `hledger-formatter.formatDocument`
    - Comment toggle command: `hledger-formatter.toggleComment` (Cmd+/)
    - Sort entries command: `hledger-formatter.sortEntries` (Shift+Cmd+S)
+   - New file command: `hledger-formatter.newFile` (Cmd+N when in .journal file)
    - Format-on-save handler for hledger files (includes optional sort-on-save)
    - Document formatting provider (integrates with VS Code's Format Document)
    - Range formatting provider
@@ -89,6 +90,25 @@ Second toggle (uncomments all):
 2025-07-31 * Transaction
   assets:checking $100.00     ← now uncommented
   reconciliation note         ← now uncommented
+```
+
+### New File Command
+
+The new file command (Cmd+N when in a journal file) creates a new monthly journal file:
+
+**Features:**
+- Prompts for month selection (defaults to current month)
+- Creates file with format: `MM-mmm.journal` (e.g., `09-sep.journal`)
+- Adds a header comment with month/year and creation date
+- Opens the newly created file in the editor
+- Warns if file already exists and offers to open it
+
+**Example:**
+```
+; September 2025 Journal
+;
+; Created on 2025-09-19
+
 ```
 
 ### Sort Entries Logic

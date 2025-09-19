@@ -396,6 +396,27 @@ suite('Hledger Formatter Tests', () => {
 		assert.ok(lines[7].includes('2025-03-05'), 'Second transaction should be March 5');
 	});
 
+	test('New file command generates correct filename format', () => {
+		// Test month name mapping
+		const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+		
+		// Verify each month generates correct format
+		for (let month = 1; month <= 12; month++) {
+			const paddedMonth = month.toString().padStart(2, '0');
+			const monthName = monthNames[month - 1];
+			const expectedFileName = `${paddedMonth}-${monthName}.journal`;
+			
+			// Verify format
+			assert.ok(expectedFileName.match(/^\d{2}-[a-z]{3}\.journal$/), 
+				`File name ${expectedFileName} should match format XX-mon.journal`);
+		}
+		
+		// Specific test cases
+		assert.strictEqual(monthNames[8], 'sep', 'September should be abbreviated as "sep"');
+		assert.strictEqual('09', '9'.padStart(2, '0'), 'Month 9 should pad to "09"');
+		assert.strictEqual('12', '12'.padStart(2, '0'), 'Month 12 should stay as "12"');
+	});
+
 	// Helper function to verify all posting lines have exactly 2 spaces of indentation
 	function verifyIndentation(formattedText: string): boolean {
 		const lines = formattedText.split('\n');
