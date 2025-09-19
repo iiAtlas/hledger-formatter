@@ -1,0 +1,73 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+This is a VS Code extension called "hledger-formatter" that formats hledger journal files by aligning account names and amounts. It supports `.journal`, `.hledger`, and `.ledger` file extensions.
+
+## Development Commands
+
+### Build and Development
+- `npm run compile` - Compile TypeScript to JavaScript
+- `npm run watch` - Watch mode for development
+- `npm run vscode:prepublish` - Prepare for publishing (runs compile)
+
+### Testing
+- `npm run test` - Run all tests (compiles, lints, copies test files, then runs tests)
+- `npm run pretest` - Prepare for testing (compile + lint + copy test files)
+- `npm run copy-test-files` - Copy test journal files to output directory
+
+### Code Quality
+- `npm run lint` - Run ESLint on the source code
+
+## Architecture
+
+### Core Components
+
+1. **Main Extension (`src/extension.ts`)**:
+   - `activate()` - Extension activation, registers commands and providers
+   - `formatHledgerJournal()` - Main formatting function (exported for testing)
+   - `formatTransaction()` - Formats individual transactions
+   - `formatTransactionHeader()` - Normalizes transaction header spacing
+
+2. **Command Registration**:
+   - Manual format command: `hledger-formatter.formatDocument`
+   - Format-on-save handler for hledger files
+   - Document formatting provider (integrates with VS Code's Format Document)
+   - Range formatting provider
+
+### Formatting Logic
+
+The formatter aligns all amounts to a fixed column position (42 characters from left):
+- Uses exactly 2 spaces for posting line indentation
+- Handles negative amounts by converting `$-X.XX` to `-$X.XX` format
+- Preserves comments and transaction structure
+- Normalizes transaction header spacing
+
+### Test Structure
+
+Tests are in `src/test/` with input/output journal pairs:
+- `test_1_in.journal` / `test_1_out.journal` - Basic formatting
+- `sample_in.journal` / `sample_out.journal` - Negative amounts handling
+- `inconsistent_indents_in.journal` / `inconsistent_indents_out.journal` - Indentation correction
+- `negative_amounts_in.journal` / `negative_amounts_out.journal` - Negative amount alignment
+
+Test verification includes:
+- Exact output matching
+- Decimal point alignment within transactions
+- Consistent 2-space indentation
+- Proper negative amount format (-$X.XX)
+
+## Configuration
+
+The extension provides one setting:
+- `hledger-formatter.formatOnSave` (boolean, default: true) - Auto-format on file save
+
+## Key Implementation Details
+
+- Fixed amount column alignment at position 42
+- Negative amount format standardization
+- Transaction boundary detection using date regex: `/^\d{4}[/-]\d{2}[/-]\d{2}/`
+- Supports transaction status markers (`*`, `!`)
+- Preserves comments within transactions
