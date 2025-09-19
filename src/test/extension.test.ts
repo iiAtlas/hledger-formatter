@@ -133,6 +133,32 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(correctNegativeFormat, true, 
 			'Negative amounts should be in -$X.XX format');
 	});
+
+	test('Remove leading blank lines', () => {
+		// Read input and expected output files
+		const inputJournal = readTestFile('leading_blanks_in.journal');
+		const expectedOutput = readTestFile('leading_blanks_out.journal');
+		
+		// Format the input journal
+		const formattedJournal = formatHledgerJournal(inputJournal);
+		
+		// Verify no leading blank lines
+		assert.strictEqual(formattedJournal[0] !== '\n', true, 
+			'Formatted output should not start with a blank line');
+		
+		// Normalize both texts to handle line endings and whitespace
+		const normalizedFormatted = normalizeText(formattedJournal);
+		const normalizedExpected = normalizeText(expectedOutput);
+		
+		// Verify the formatting matches the expected output
+		assert.strictEqual(normalizedFormatted, normalizedExpected, 
+			'Formatted output should remove leading blank lines');
+		
+		// Additional verification: ensure first line is not blank
+		const lines = formattedJournal.split('\n');
+		assert.strictEqual(lines[0].trim().length > 0, true,
+			'First line should have content');
+	});
 	
 	// Helper function to verify all posting lines have exactly 2 spaces of indentation
 	function verifyIndentation(formattedText: string): boolean {
