@@ -52,11 +52,12 @@ This is a VS Code extension called "hledger-formatter" that formats hledger jour
 
 ### Formatting Logic
 
-The formatter aligns all amounts to a fixed column position (42 characters from left):
+The formatter aligns all amounts to a configurable column position (default: 42 characters from left):
 - Uses exactly 2 spaces for posting line indentation
 - Handles negative amounts by converting `$-X.XX` to `-$X.XX` format
 - Preserves comments and transaction structure
 - Normalizes transaction header spacing
+- Column position is configurable via `hledger-formatter.amountColumnPosition` setting
 
 ### Comment Toggle Logic
 
@@ -206,10 +207,11 @@ Test verification includes:
 The extension provides the following settings:
 - `hledger-formatter.formatOnSave` (boolean, default: true) - Auto-format on file save
 - `hledger-formatter.sortOnSave` (boolean, default: true) - Sort journal entries by date on save
+- `hledger-formatter.amountColumnPosition` (number, default: 42, range: 20-100) - Column position for aligning amounts
 
 ## Key Implementation Details
 
-- Fixed amount column alignment at position 42
+- Configurable amount column alignment (default position: 42)
 - Negative amount format standardization
 - Transaction boundary detection using date regex: `/^\d{4}[/-]\d{2}[/-]\d{2}/`
 - Supports transaction status markers (`*`, `!`)

@@ -7,6 +7,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [Unreleased]
 
 ### Added
+- Configurable amount column position with `hledger-formatter.amountColumnPosition` setting (closes #16)
+  - Default: 42 (preserves existing behavior)
+  - Range: 20-100 for flexible alignment preferences
 - Sort-on-save option for automatic journal sorting (closes #10)
 - New file command to create monthly journal files with Cmd+N (closes #4)
 - Sort journal entries by date command with Shift+Cmd+S (closes #1)
