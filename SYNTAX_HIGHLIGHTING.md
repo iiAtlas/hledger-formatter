@@ -1,7 +1,7 @@
 # hledger Syntax Highlighting
 
 ## Overview
-The hledger-formatter extension now includes comprehensive syntax highlighting for hledger journal files (`.journal`, `.hledger`, `.ledger`).
+The hledger-formatter extension includes comprehensive syntax highlighting for hledger journal files (`.journal`, `.hledger`, `.ledger`).
 
 ## Features
 
@@ -46,7 +46,7 @@ In this example:
 - `project:` appears in purple bold and `mugsly` in bright blue bold italic
 
 ## Custom Theme
-The extension includes an optional "hledger Color Theme" optimized for viewing journal files with VS Code's dark theme.
+The extension includes an optional "HLedger Color Theme" optimized for viewing journal files with VS Code's dark theme.
 
 ## TextMate Scopes
 For theme authors, the following TextMate scopes are available:
