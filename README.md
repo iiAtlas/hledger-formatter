@@ -108,7 +108,7 @@ Feel free to:
 
 ## Support
 
-For help and support, see [SUPPORT.md](SUPPORT.md) or email hledger@atlasatlasatlas.com
+For help and support, see [SUPPORT.md](SUPPORT.md)
 
 - **Issues & Bug Reports**: [GitHub Issues](https://github.com/iiAtlas/hledger-formatter/issues)
 - **Source Code**: [GitHub Repository](https://github.com/iiAtlas/hledger-formatter)

@@ -1,6 +1,7 @@
 {
   "name": "hledger-formatter",
   "displayName": "HLedger Formatter",
+  "publisher": "iiatlas",
   "description": "Make plain text accounting fun! Aligns amounts, sorts entries, and provides syntax highlighting for HLedger journal files.",
   "version": "1.0.0",
   "icon": "images/icon.png",
