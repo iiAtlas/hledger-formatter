@@ -1,3 +1,5 @@
+![HLedger Formatter Banner](images/banner.jpg)
+
 # HLedger Formatter
 
 A VS Code extension to make editing hledger journal files a bit more fun.
