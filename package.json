@@ -33,7 +33,7 @@
       {
         "id": "hledger",
         "aliases": [
-          "hledger journal",
+          "HLedger",
           "hledger",
           "ledger"
         ],
