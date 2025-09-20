@@ -9,7 +9,7 @@ A VS Code extension to make editing hledger journal files a bit more fun.
 ## Features
 
 - Automatically aligns account names and amounts in hledger journal files
-- Rich syntax highlighting with hierarchical account coloring ([details](SYNTAX_HIGHLIGHTING.md))
+- Rich syntax highlighting with hierarchical account coloring
 - Sort journal entries by date (`Shift+Cmd+S`)
 - Sort on save option (enabled by default)
 - Toggle comment lines (`Cmd+/`)
@@ -17,7 +17,7 @@ A VS Code extension to make editing hledger journal files a bit more fun.
 
 ## Demo
 
-### Syntax Highlighting
+### Syntax Highlighting ([details](SYNTAX_HIGHLIGHTING.md))
 Rich syntax highlighting with hierarchical account coloring and project tags:
 
 ![Syntax Demo](images/syntax-demo.gif)
@@ -101,7 +101,7 @@ Initial release of hledger Formatter with:
 
 ## Requirements
 
-- VS Code 1.60.0 or newer
+- VS Code 1.92.0 or newer
 
 ## Contributing
 
