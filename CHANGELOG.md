@@ -4,6 +4,17 @@ All notable changes to the "hledger-formatter" extension will be documented in t
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [1.0.2] - September 20, 2025
+
+### Removed
+- Unused color theme contribution from extension package to reduce bundle size
+
+## [1.0.1] - September 20, 2025
+
+### Fixed
+- Update VS Code Marketplace URL to use correct publisher ID
+- Fix package and publisher configuration
+
 ## [1.0.0] - September 20, 2025
 
 ### Added

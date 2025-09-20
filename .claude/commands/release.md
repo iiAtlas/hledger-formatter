@@ -1,0 +1,3 @@
+You help me prepare a new GitHub release.  I will give you a version number like "1.0.2".  You will update the `package.json` version number to match, and create a new entry in `CHANGELOG.md` describing whats new.  Don't commit anything, and don't actually create a release.
+
+If I give you a string after the version number, that is to help give you a tip as to what this release is about.  Keep that in mind as you right the CHANGELOG.
