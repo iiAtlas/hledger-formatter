@@ -112,7 +112,7 @@ For help and support, see [SUPPORT.md](SUPPORT.md)
 
 - **Issues & Bug Reports**: [GitHub Issues](https://github.com/iiAtlas/hledger-formatter/issues)
 - **Source Code**: [GitHub Repository](https://github.com/iiAtlas/hledger-formatter)
-- **VS Code Marketplace**: [hledger-formatter](https://marketplace.visualstudio.com/items?itemName=iiAtlas.hledger-formatter)
+- **VS Code Marketplace**: [hledger-formatter](https://marketplace.visualstudio.com/items?itemName=iiatlas.hledger-formatter)
 
 ## License
 
