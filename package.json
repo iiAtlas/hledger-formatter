@@ -1,15 +1,30 @@
 {
   "name": "hledger-formatter",
-  "displayName": "hledger-formatter",
-  "description": "Format hledger journal files",
+  "displayName": "hledger Formatter",
+  "description": "hledger Journal Formatter - aligns amounts, sorts entries, and provides syntax highlighting for hledger journal files.",
   "version": "0.0.1",
-  "repository": "https://github.com/iiAtlas/hledger-formatter.git",
+  "icon": "images/icon.png",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "homepage": "https://github.com/iiAtlas/hledger-formatter/blob/main/README.md",
+  "bugs": {
+    "url": "https://github.com/iiAtlas/hledger-formatter/issues",
+    "email": "hledger@atlasatlasatlas.com"
+  },
+  "galleryBanner": {
+    "color": "#231818",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iiAtlas/hledger-formatter.git"
+  },
   "engines": {
     "vscode": "^1.92.0"
   },
   "categories": [
-    "Other",
-    "Formatters"
+    "Formatters",
+    "Programming Languages",
+    "Other"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
@@ -47,19 +62,19 @@
     "commands": [
       {
         "command": "hledger-formatter.formatDocument",
-        "title": "Format hledger Journal"
+        "title": "HLedger: Format Journal"
       },
       {
         "command": "hledger-formatter.toggleComment",
-        "title": "Toggle Comment"
+        "title": "HLedger: Toggle Comment"
       },
       {
         "command": "hledger-formatter.sortEntries",
-        "title": "Sort Journal Entries by Date"
+        "title": "HLedger: Sort Journal Entries by Date"
       },
       {
         "command": "hledger-formatter.newFile",
-        "title": "New hledger Journal File"
+        "title": "HLedger: New Journal File"
       }
     ],
     "configuration": {
