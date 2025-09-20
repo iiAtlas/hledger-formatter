@@ -1,18 +1,33 @@
-# hledger Formatter
+# HLedger Formatter
 
-A VS Code extension to format spacing in hledger journal files.
+A VS Code extension to make editing hledger journal files a bit more fun.
+
+[HLedger](https://hledger.org/) is an awesome plain text cli accounting tool. This extension adds syntax highlighting, formatting, sorting, and other quality-of-life improvements to make editing these files easier.
 
 ## Features
 
 - Automatically aligns account names and amounts in hledger journal files
-- Ensures exactly one blank line between transaction entries
-- Removes any blank lines at the start of the file
-- Format on demand with keyboard shortcut (Shift+Alt+F)
-- Format on save option (enabled by default)
-- Sort journal entries by date (Shift+Cmd+S)
+- Rich syntax highlighting with hierarchical account coloring
+- Sort journal entries by date (`Shift+Cmd+S`)
 - Sort on save option (enabled by default)
-- Context menu option to format hledger files
-- Toggle comment lines (Cmd+/)
+- Toggle comment lines (`Cmd+/`)
+
+## Demo
+
+### Syntax Highlighting
+Rich syntax highlighting with hierarchical account coloring and project tags:
+
+![Syntax Demo](images/syntax-demo.gif)
+
+### Automatic Formatting
+Aligns amounts to a configurable column position for clean, readable journal files:
+
+![Format Demo](images/format-demo.gif)
+
+### Sort by Date
+Automatically sorts transactions chronologically:
+
+![Sort Demo](images/sort-demo.gif)
 
 ## Supported File Types
 
@@ -23,6 +38,7 @@ A VS Code extension to format spacing in hledger journal files.
 ## Usage
 
 1. Open a hledger journal file
+2. Set the file language mode to `hledger`
 2. Use one of these methods to format:
    - Press `Shift+Alt+F`
    - Right-click and select "Format hledger Journal" from the context menu
@@ -74,6 +90,14 @@ Initial release of hledger Formatter
 
 - VS Code 1.60.0 or newer
 
+## Support
+
+For help and support, see [SUPPORT.md](SUPPORT.md) or email hledger@atlasatlasatlas.com
+
+- **Issues & Bug Reports**: [GitHub Issues](https://github.com/iiAtlas/hledger-formatter/issues)
+- **Source Code**: [GitHub Repository](https://github.com/iiAtlas/hledger-formatter)
+- **VS Code Marketplace**: [hledger-formatter](https://marketplace.visualstudio.com/items?itemName=iiAtlas.hledger-formatter)
+
 ## License
 
-MIT
+GPL-3.0 - see the [LICENSE.md](LICENSE.md) file for details
