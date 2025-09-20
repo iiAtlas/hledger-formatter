@@ -4,7 +4,7 @@ All notable changes to the "hledger-formatter" extension will be documented in t
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [1.0.0] - September 20, 2025
 
 ### Added
 - Configurable amount column position with `hledger-formatter.amountColumnPosition` setting (closes #16)

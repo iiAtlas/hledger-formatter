@@ -13,10 +13,11 @@ A VS Code extension to make editing hledger journal files a bit more fun.
 - Sort journal entries by date (`Shift+Cmd+S`)
 - Sort on save option (enabled by default)
 - Toggle comment lines (`Cmd+/`)
+- Create new monthly journal files (`Cmd+N`)
 
 ## Demo
 
-### Syntax Highlighting
+### Syntax Highlighting ([details](SYNTAX_HIGHLIGHTING.md))
 Rich syntax highlighting with hierarchical account coloring and project tags:
 
 ![Syntax Demo](images/syntax-demo.gif)
@@ -40,11 +41,14 @@ Automatically sorts transactions chronologically:
 ## Usage
 
 1. Open a hledger journal file
-2. Set the file language mode to `hledger`
 2. Use one of these methods to format:
-   - Press `Shift+Alt+F`
-   - Right-click and select "Format hledger Journal" from the context menu
+   - Press `Shift+Alt+F` to format the entire document
    - Save the file (if format on save is enabled)
+   - Right-click and select "Format hledger Journal" from the context menu
+3. Additional commands:
+   - Press `Shift+Cmd+S` to sort entries by date
+   - Press `Cmd+/` to toggle comments on selected lines
+   - Press `Cmd+N` to create a new monthly journal file
 
 ## Extension Settings
 
@@ -86,11 +90,18 @@ After formatting:
 
 ### 1.0.0
 
-Initial release of hledger Formatter
+Initial release of hledger Formatter with:
+- Automatic alignment of account names and amounts
+- Rich syntax highlighting with hierarchical account coloring
+- Sort journal entries by date
+- Toggle comment lines with smart block behavior
+- Create new monthly journal files
+- Configurable amount column position
+- Format and sort on save options
 
 ## Requirements
 
-- VS Code 1.60.0 or newer
+- VS Code 1.92.0 or newer
 
 ## Contributing
 

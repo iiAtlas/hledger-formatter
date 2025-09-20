@@ -1,8 +1,8 @@
 {
   "name": "hledger-formatter",
-  "displayName": "hledger Formatter",
-  "description": "hledger Journal Formatter - aligns amounts, sorts entries, and provides syntax highlighting for hledger journal files.",
-  "version": "0.0.1",
+  "displayName": "HLedger Formatter",
+  "description": "Make plain text accounting fun! Aligns amounts, sorts entries, and provides syntax highlighting for HLedger journal files.",
+  "version": "1.0.0",
   "icon": "images/icon.png",
   "license": "SEE LICENSE IN LICENSE.md",
   "homepage": "https://github.com/iiAtlas/hledger-formatter/blob/main/README.md",
@@ -54,7 +54,7 @@
     ],
     "themes": [
       {
-        "label": "hledger Color Theme",
+        "label": "HLedger Color Theme",
         "uiTheme": "vs-dark",
         "path": "./themes/hledger-color-theme.json"
       }
@@ -78,17 +78,17 @@
       }
     ],
     "configuration": {
-      "title": "hledger Formatter",
+      "title": "HLedger Formatter",
       "properties": {
         "hledger-formatter.formatOnSave": {
           "type": "boolean",
           "default": true,
-          "description": "Format hledger journal files on save"
+          "description": "Format HLedger journal files on save"
         },
         "hledger-formatter.sortOnSave": {
           "type": "boolean",
           "default": true,
-          "description": "Sort hledger journal entries by date on save"
+          "description": "Sort HLedger journal entries by date on save"
         },
         "hledger-formatter.amountColumnPosition": {
           "type": "number",
