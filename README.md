@@ -90,6 +90,13 @@ Initial release of hledger Formatter
 
 - VS Code 1.60.0 or newer
 
+## Contributing
+
+This is an open source project and contributions are welcome! Feel free to:
+- Report bugs or request features via [GitHub Issues](https://github.com/iiAtlas/hledger-formatter/issues)
+- Submit pull requests with improvements
+- Share feedback and suggestions
+
 ## Support
 
 For help and support, see [SUPPORT.md](SUPPORT.md) or email hledger@atlasatlasatlas.com
