@@ -88,16 +88,7 @@ After formatting:
 
 ## Release Notes
 
-### 1.0.0
-
-Initial release of hledger Formatter with:
-- Automatic alignment of account names and amounts
-- Rich syntax highlighting with hierarchical account coloring
-- Sort journal entries by date
-- Toggle comment lines with smart block behavior
-- Create new monthly journal files
-- Configurable amount column position
-- Format and sort on save options
+See [CHANGELOG.md](CHANGELOG.md) for a full list of changes in each release.
 
 ## Requirements
 
@@ -105,7 +96,12 @@ Initial release of hledger Formatter with:
 
 ## Contributing
 
-This is an open source project and contributions are welcome! Feel free to:
+This is an open source project and contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed information on:
+- Setting up your development environment
+- Running tests and building the extension
+- Submitting pull requests
+
+Feel free to:
 - Report bugs or request features via [GitHub Issues](https://github.com/iiAtlas/hledger-formatter/issues)
 - Submit pull requests with improvements
 - Share feedback and suggestions
