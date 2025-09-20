@@ -53,13 +53,6 @@
         "path": "./syntaxes/hledger.tmLanguage.json"
       }
     ],
-    "themes": [
-      {
-        "label": "HLedger Color Theme",
-        "uiTheme": "vs-dark",
-        "path": "./themes/hledger-color-theme.json"
-      }
-    ],
     "commands": [
       {
         "command": "hledger-formatter.formatDocument",
