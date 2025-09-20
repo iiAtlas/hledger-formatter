@@ -30,7 +30,9 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 		const text = document.getText();
-		const formattedText = formatHledgerJournal(text);
+		const config = vscode.workspace.getConfiguration('hledger-formatter');
+		const amountColumnPosition = config.get('amountColumnPosition', 42);
+		const formattedText = formatHledgerJournal(text, amountColumnPosition);
 		
 		editor.edit((editBuilder) => {
 			const fullRange = new vscode.Range(
@@ -70,7 +72,8 @@ export function activate(context: vscode.ExtensionContext) {
 				
 				// Apply formatting if enabled
 				if (formatOnSave) {
-					text = formatHledgerJournal(text);
+					const amountColumnPosition = config.get('amountColumnPosition', 42);
+					text = formatHledgerJournal(text, amountColumnPosition);
 				}
 				
 				event.waitUntil(Promise.resolve([
@@ -96,7 +99,9 @@ export function activate(context: vscode.ExtensionContext) {
 		{
 			provideDocumentFormattingEdits(document: vscode.TextDocument): vscode.TextEdit[] {
 				const text = document.getText();
-				const formattedText = formatHledgerJournal(text);
+				const config = vscode.workspace.getConfiguration('hledger-formatter');
+				const amountColumnPosition = config.get('amountColumnPosition', 42);
+				const formattedText = formatHledgerJournal(text, amountColumnPosition);
 				
 				return [
 					new vscode.TextEdit(
@@ -126,7 +131,9 @@ export function activate(context: vscode.ExtensionContext) {
 				// For simplicity, we'll format the entire document
 				// A more advanced implementation could format just the selected transactions
 				const text = document.getText();
-				const formattedText = formatHledgerJournal(text);
+				const config = vscode.workspace.getConfiguration('hledger-formatter');
+				const amountColumnPosition = config.get('amountColumnPosition', 42);
+				const formattedText = formatHledgerJournal(text, amountColumnPosition);
 
 				return [
 					new vscode.TextEdit(
@@ -288,9 +295,10 @@ export function activate(context: vscode.ExtensionContext) {
 /**
  * Formats a hledger journal text by aligning account names and amounts
  * @param text The original journal text
+ * @param amountColumnPosition The column position for aligning amounts (default: 42)
  * @returns The formatted journal text
  */
-export function formatHledgerJournal(text: string): string {
+export function formatHledgerJournal(text: string, amountColumnPosition: number = 42): string {
 	// Split the text into transactions
 	const lines = text.split('\n');
 	const formattedLines: string[] = [];
@@ -308,7 +316,7 @@ export function formatHledgerJournal(text: string): string {
 		if (!line.trim()) {
 			if (inTransaction) {
 				// End of transaction
-				formattedLines.push(...formatTransaction(transactionLines));
+				formattedLines.push(...formatTransaction(transactionLines, amountColumnPosition));
 				transactionLines = [];
 				inTransaction = false;
 				lastWasTransaction = true;
@@ -342,7 +350,7 @@ export function formatHledgerJournal(text: string): string {
 		if (isTransactionHeader) {
 			if (inTransaction) {
 				// End previous transaction and format it
-				formattedLines.push(...formatTransaction(transactionLines));
+				formattedLines.push(...formatTransaction(transactionLines, amountColumnPosition));
 				// Add exactly one blank line between transactions
 				formattedLines.push('');
 				transactionLines = [];
@@ -366,7 +374,7 @@ export function formatHledgerJournal(text: string): string {
 	
 	// Format the last transaction if any
 	if (inTransaction && transactionLines.length > 0) {
-		formattedLines.push(...formatTransaction(transactionLines));
+		formattedLines.push(...formatTransaction(transactionLines, amountColumnPosition));
 		// Add one blank line at the end after the last transaction
 		formattedLines.push('');
 	}
@@ -387,9 +395,10 @@ export function formatHledgerJournal(text: string): string {
 /**
  * Formats a single transaction by aligning account names and amounts
  * @param lines Lines of a transaction including header and postings
+ * @param amountColumnPosition The column position for aligning amounts
  * @returns Formatted transaction lines
  */
-function formatTransaction(lines: string[]): string[] {
+function formatTransaction(lines: string[], amountColumnPosition: number): string[] {
 	if (lines.length <= 1) {
 		return lines;
 	}
@@ -415,8 +424,8 @@ function formatTransaction(lines: string[]): string[] {
 		return formattedLines;
 	}
 	
-	// Fixed column position for all amounts (42 characters from the left)
-	const fixedAmountColumn = 42;
+	// Use the configurable column position for all amounts
+	const fixedAmountColumn = amountColumnPosition;
 	
 	// Process each posting line
 	for (const line of postingLines) {

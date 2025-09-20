@@ -372,6 +372,59 @@ suite('Hledger Formatter Tests', () => {
 		}
 	});
 
+	test('Format with custom column position', () => {
+		// Test input with transactions
+		const testInput = `2025-03-01 Test transaction
+  Assets:Cash  $100.00
+  Income:Salary       -$100.00
+
+2025-03-02 Another transaction  
+  Expenses:Food    $25.50
+  Assets:Cash   -$25.50`;
+
+		// Test with column position 30
+		const formatted30 = formatHledgerJournal(testInput, 30);
+		const lines30 = formatted30.split('\n');
+		
+		// Verify amounts are aligned at column 30
+		const amountLines30 = lines30.filter(line => line.includes('$'));
+		for (const line of amountLines30) {
+			const dollarIndex = line.indexOf('$');
+			// Check for negative amounts (-$) vs regular ($)
+			const actualIndex = line.includes('-$') ? line.indexOf('-$') + 1 : dollarIndex;
+			assert.ok(actualIndex >= 28 && actualIndex <= 32, 
+				`Amount should be aligned around column 30, got ${actualIndex}: ${line}`);
+		}
+		
+		// Test with column position 50
+		const formatted50 = formatHledgerJournal(testInput, 50);
+		const lines50 = formatted50.split('\n');
+		
+		// Verify amounts are aligned at column 50
+		const amountLines50 = lines50.filter(line => line.includes('$'));
+		for (const line of amountLines50) {
+			const dollarIndex = line.indexOf('$');
+			// Check for negative amounts (-$) vs regular ($)
+			const actualIndex = line.includes('-$') ? line.indexOf('-$') + 1 : dollarIndex;
+			assert.ok(actualIndex >= 48 && actualIndex <= 52, 
+				`Amount should be aligned around column 50, got ${actualIndex}: ${line}`);
+		}
+		
+		// Test with default column position (42)
+		const formattedDefault = formatHledgerJournal(testInput);
+		const linesDefault = formattedDefault.split('\n');
+		
+		// Verify amounts are aligned at column 42 (default)
+		const amountLinesDefault = linesDefault.filter(line => line.includes('$'));
+		for (const line of amountLinesDefault) {
+			const dollarIndex = line.indexOf('$');
+			// Check for negative amounts (-$) vs regular ($)
+			const actualIndex = line.includes('-$') ? line.indexOf('-$') + 1 : dollarIndex;
+			assert.ok(actualIndex >= 40 && actualIndex <= 44, 
+				`Amount should be aligned around column 42 (default), got ${actualIndex}: ${line}`);
+		}
+	});
+
 	test('Sort preserves comments at beginning', () => {
 		const testInput = `; File header comment
 ; This should stay at the top

@@ -34,6 +34,7 @@ This extension contributes the following settings:
 
 * `hledger-formatter.formatOnSave`: Enable/disable formatting on save (default: true)
 * `hledger-formatter.sortOnSave`: Enable/disable sorting entries by date on save (default: true)
+* `hledger-formatter.amountColumnPosition`: Column position for aligning amounts (default: 42, range: 20-100)
 
 ## Example
 

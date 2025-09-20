@@ -74,6 +74,13 @@
           "type": "boolean",
           "default": true,
           "description": "Sort hledger journal entries by date on save"
+        },
+        "hledger-formatter.amountColumnPosition": {
+          "type": "number",
+          "default": 42,
+          "minimum": 20,
+          "maximum": 100,
+          "description": "Column position for aligning amounts (default: 42)"
         }
       }
     },
