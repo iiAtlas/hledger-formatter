@@ -14,6 +14,7 @@ Account names are highlighted with different colors for each hierarchical level:
 - **Level 5** (e.g., `apple`): Purple - Additional subcategories
 
 ### Other Syntax Elements
+- **Include Statements**: `!include` directives are highlighted with the keyword as a control element and file paths as strings
 - **Comments**: Lines starting with `;` are highlighted in green italic (supports indented and inline comments)
 - **Dates**: Transaction dates in `YYYY-MM-DD` or `YYYY/MM/DD` format
 - **Transaction Status & Descriptions**:
@@ -29,6 +30,7 @@ Account names are highlighted with different colors for each hierarchical level:
 ## Example
 ```hledger
 ; This is a comment
+!include common/accounts.journal
 project: mugsly
 
 2023-01-01 * Opening Balance project:mugsly
@@ -37,6 +39,8 @@ project: mugsly
 ```
 
 In this example:
+- The `!include` keyword is highlighted as a control keyword
+- The file path `common/accounts.journal` is highlighted as a string
 - `assets` appears in bold blue (level 1)
 - `bank` appears in teal (level 2)  
 - `checking` appears in yellow (level 3)
@@ -50,6 +54,8 @@ The extension includes an optional "HLedger Color Theme" optimized for viewing j
 
 ## TextMate Scopes
 For theme authors, the following TextMate scopes are available:
+- `keyword.control.include.hledger` - Include directive keyword
+- `string.quoted.other.include-path.hledger` - Include file paths
 - `comment.line.semicolon.hledger` - Comments
 - `constant.numeric.date.hledger` - Transaction dates
 - `keyword.operator.status.reconciled.hledger` - Reconciled status marker (*)

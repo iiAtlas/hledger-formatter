@@ -49,7 +49,6 @@ This is a VS Code extension called "hledger-formatter" that formats hledger jour
    - Project tag support (`project: name` or `project:name`)
    - Comment highlighting (including indented and inline comments)
    - Amount and date highlighting
-   - Include statement support (`!include` directives)
 
 ### Formatting Logic
 
@@ -169,7 +168,6 @@ The extension provides rich syntax highlighting with distinct colors for:
 - Comments: Green italic (supports indented and inline)
 - Dates: Highlighted in YYYY-MM-DD or YYYY/MM/DD format
 - Amounts: Numeric values with proper currency formatting
-- Include statements: `!include` directives highlighted as keywords with file paths as strings
 
 ### Test Structure
 
