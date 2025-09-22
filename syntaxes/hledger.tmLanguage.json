@@ -3,6 +3,9 @@
   "name": "hledger",
   "patterns": [
     {
+      "include": "#include"
+    },
+    {
       "include": "#comment"
     },
     {
@@ -16,6 +19,22 @@
     }
   ],
   "repository": {
+    "include": {
+      "patterns": [
+        {
+          "name": "keyword.control.include.hledger",
+          "match": "^!include\\s+(.+)$",
+          "captures": {
+            "0": {
+              "name": "meta.include.hledger"
+            },
+            "1": {
+              "name": "string.quoted.other.include-path.hledger"
+            }
+          }
+        }
+      ]
+    },
     "comment": {
       "patterns": [
         {

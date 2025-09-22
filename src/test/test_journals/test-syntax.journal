@@ -1,5 +1,10 @@
 ; This is a comment - should be highlighted in green
 
+; Testing !include statements - should be highlighted as keywords
+!include 01-jan.journal
+!include expenses/2023.journal
+!include ../common/accounts.journal
+
 ; Reconciled transaction (with *) - normal color
 2023-01-01 * Opening Balance
     assets:bank:checking:personal        $1000.00
