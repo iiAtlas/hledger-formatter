@@ -6,6 +6,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.0.3] - September 22, 2025
+
 ### Added
 - Syntax highlighting for `!include` statements (closes #27)
 
