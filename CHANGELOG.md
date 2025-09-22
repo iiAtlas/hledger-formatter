@@ -4,6 +4,11 @@ All notable changes to the "hledger-formatter" extension will be documented in t
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [Unreleased]
+
+### Added
+- Syntax highlighting for `!include` statements (closes #27)
+
 ## [1.0.2] - September 20, 2025
 
 ### Removed
