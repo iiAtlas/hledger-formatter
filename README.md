@@ -106,6 +106,10 @@ Feel free to:
 - Submit pull requests with improvements
 - Share feedback and suggestions
 
+## Other Distributions
+
+In addition to the VSCode Marketplace, this package is also available on the OpenVSX Registry: [iiatlas/hledger-formatter](https://open-vsx.org/extension/iiatlas/hledger-formatter).
+
 ## Support
 
 For help and support, see [SUPPORT.md](SUPPORT.md)
