@@ -132,7 +132,10 @@
     "pretest": "npm run compile && npm run lint && npm run copy-test-files",
     "lint": "eslint src",
     "test": "vscode-test",
-    "copy-test-files": "mkdir -p out/test/test_journals && cp -r src/test/test_journals/* out/test/test_journals/"
+    "copy-test-files": "mkdir -p out/test/test_journals && cp -r src/test/test_journals/* out/test/test_journals/",
+    "vsce:package": "npx vsce package",
+    "vsce:publish": "npx vsce publish",
+    "ovsx:publish": "npx ovsx publish -p OVSX_TOKEN_GOES_HERE_BUT_DONT_COMMIT_IT" 
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
