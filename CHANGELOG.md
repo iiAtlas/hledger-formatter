@@ -2,9 +2,11 @@
 
 All notable changes to the "hledger-formatter" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
 ## [Unreleased]
+
+## [1.0.4] - September 24, 2025
+
+- Updated project to use MIT License. Enjoy!
 
 ## [1.0.3] - September 22, 2025
 
