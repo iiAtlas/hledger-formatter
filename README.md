@@ -120,4 +120,4 @@ For help and support, see [SUPPORT.md](SUPPORT.md)
 
 ## License
 
-GPL-3.0 - see the [LICENSE.md](LICENSE.md) file for details
+MIT - see the [LICENSE](LICENSE) file for details

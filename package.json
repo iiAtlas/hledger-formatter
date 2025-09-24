@@ -5,7 +5,7 @@
   "description": "Make plain text accounting fun! Aligns amounts, sorts entries, and provides syntax highlighting for HLedger journal files.",
   "version": "1.0.3",
   "icon": "images/icon.png",
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://github.com/iiAtlas/hledger-formatter/blob/main/README.md",
   "bugs": {
     "url": "https://github.com/iiAtlas/hledger-formatter/issues",
