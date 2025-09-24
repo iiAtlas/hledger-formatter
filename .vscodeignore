@@ -9,4 +9,7 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+.DS_Store
+out/test/**
+**/test_journals/**
 .env
