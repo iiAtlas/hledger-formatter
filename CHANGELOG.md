@@ -6,6 +6,7 @@ All notable changes to the "hledger-formatter" extension will be documented in t
 
 ## [1.0.4] - September 24, 2025
 
+- Removed unused test files from generated VSCode package
 - Updated project to use MIT License. Enjoy!
 
 ## [1.0.3] - September 22, 2025
