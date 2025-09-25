@@ -1,13 +1,13 @@
 ; This file starts with blank lines
 
 2025-01-01 * Opening Balance
-  assets:bank:checking                    $1000.00
-  equity:opening                         -$1000.00
+    assets:bank:checking  $1000.00
+    equity:opening       $-1000.00
 
 2025-01-05 Grocery Store
-  expenses:food                           $85.50
-  assets:bank:checking                   -$85.50
+    expenses:food          $85.50
+    assets:bank:checking  $-85.50
 
 2025-01-10 Coffee Shop
-  expenses:dining:coffee                  $4.75
-  assets:cash                            -$4.75
+    expenses:dining:coffee  $4.75
+    assets:cash            $-4.75

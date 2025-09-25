@@ -14,9 +14,9 @@ export interface FormatterOptions {
 
 const DEFAULT_FORMATTER_OPTIONS: FormatterOptions = {
 	amountColumnPosition: 42,
-	amountAlignment: 'fixedColumn',
-	indentationWidth: 2,
-	negativeCommodityStyle: 'signBeforeSymbol'
+	amountAlignment: 'widest',
+	indentationWidth: 4,
+	negativeCommodityStyle: 'symbolBeforeSign'
 };
 
 function getFormatterOptionsFromConfiguration(config?: vscode.WorkspaceConfiguration): FormatterOptions {
@@ -460,43 +460,72 @@ function formatTransaction(lines: string[], options: FormatterOptions): string[]
 	const indentWidth = Math.max(0, options.indentationWidth);
 	const indentStr = ' '.repeat(indentWidth);
 	const postingDetails = postingLines.map(extractPostingDetail);
-	const maxAccountLength = postingDetails.reduce((max, detail) => {
-		if (detail.account) {
-			return Math.max(max, detail.account.length);
+	const preparedPostings = postingDetails.map(detail => {
+		if (!detail.account) {
+			return {
+				detail,
+				formattedAmount: null as string | null,
+				digitsPrefixLength: 0
+			};
+		}
+
+		const { formatted: amount } = formatAmountWithStyle(
+			detail.amount && detail.amount.length > 0 ? detail.amount : null,
+			options.negativeCommodityStyle
+		);
+
+		if (!amount) {
+			return {
+				detail,
+				formattedAmount: null,
+				digitsPrefixLength: 0
+			};
+		}
+
+		const normalizedAmount = amount.trim();
+		return {
+			detail,
+			formattedAmount: normalizedAmount,
+			digitsPrefixLength: getDigitsPrefixLength(normalizedAmount)
+		};
+	});
+
+	const referenceAccountLength = preparedPostings.reduce((max, prepared) => {
+		const account = prepared.detail.account;
+		if (account) {
+			return Math.max(max, account.length);
 		}
 		return max;
 	}, 0);
 
-	for (const detail of postingDetails) {
+	let baseDigitsColumn: number;
+	if (options.amountAlignment === 'widest') {
+		const digitColumnCandidates = preparedPostings
+			.filter(prepared => prepared.detail.account && prepared.formattedAmount)
+			.map(prepared => indentWidth + (prepared.detail.account as string).length + prepared.digitsPrefixLength + 2);
+		const fallbackColumn = indentWidth + referenceAccountLength + 2;
+		baseDigitsColumn = digitColumnCandidates.length > 0 ? Math.max(fallbackColumn, ...digitColumnCandidates) : fallbackColumn;
+	} else {
+		baseDigitsColumn = options.amountColumnPosition;
+	}
+
+	for (const prepared of preparedPostings) {
+		const detail = prepared.detail;
 		if (!detail.account) {
 			formattedLines.push(`${indentStr}${detail.trimmed}`);
 			continue;
 		}
 
-		const { formatted: amount, hasLeadingNegativeCurrency } = formatAmountWithStyle(
-			detail.amount && detail.amount.length > 0 ? detail.amount : null,
-			options.negativeCommodityStyle
-		);
+		const amount = prepared.formattedAmount;
 
 		if (!amount) {
 			formattedLines.push(`${indentStr}${detail.trimmed}`);
 			continue;
 		}
 
-		let paddingNeeded: number;
-		if (options.amountAlignment === 'widest') {
-			const referenceAccountLength = maxAccountLength > 0 ? maxAccountLength : detail.account.length;
-			const baseColumn = indentWidth + referenceAccountLength + 2;
-			paddingNeeded = baseColumn - (indentWidth + detail.account.length);
-		} else {
-			paddingNeeded = options.amountColumnPosition - (indentWidth + detail.account.length);
-		}
-
-		if (hasLeadingNegativeCurrency) {
-			paddingNeeded -= 1;
-		}
-
-		paddingNeeded = Math.max(1, paddingNeeded);
+		const digitsPrefixLength = prepared.digitsPrefixLength;
+		const paddingTarget = baseDigitsColumn - (indentWidth + detail.account.length) - digitsPrefixLength;
+		const paddingNeeded = Math.max(2, paddingTarget);
 		formattedLines.push(`${indentStr}${detail.account}${' '.repeat(paddingNeeded)}${amount}`);
 	}
 
@@ -538,9 +567,9 @@ function extractPostingDetail(line: string): PostingDetail {
 	return { trimmed, account: trimmed, amount: null };
 }
 
-function formatAmountWithStyle(amount: string | null, style: NegativeCommodityStyle): { formatted: string | null; hasLeadingNegativeCurrency: boolean } {
+function formatAmountWithStyle(amount: string | null, style: NegativeCommodityStyle): { formatted: string | null } {
 	if (!amount) {
-		return { formatted: null, hasLeadingNegativeCurrency: false };
+		return { formatted: null };
 	}
 
 	let formatted = amount;
@@ -552,10 +581,13 @@ function formatAmountWithStyle(amount: string | null, style: NegativeCommoditySt
 		formatted = formatted.replace(signLeadingRegex, '$1-$2$3');
 	}
 
-	const trimmed = formatted.trim();
-	const hasLeadingNegativeCurrency = /^-(\$|€|£|¥)/.test(trimmed);
+	return { formatted };
+}
 
-	return { formatted, hasLeadingNegativeCurrency };
+function getDigitsPrefixLength(amount: string): number {
+	const trimmedAmount = amount.trimStart();
+	const matchIndex = trimmedAmount.search(/[0-9]/);
+	return matchIndex === -1 ? trimmedAmount.length : matchIndex;
 }
 
 /**

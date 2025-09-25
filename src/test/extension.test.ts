@@ -362,13 +362,15 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(lines[0], '; This is a header comment');
 		assert.strictEqual(lines[1], '; It should be preserved');
 		
-		// Verify formatting is correct (amounts aligned at column 42)
-		const amountLines = lines.filter(line => line.includes('$'));
-		for (const line of amountLines) {
-			const dollarIndex = line.indexOf('$');
-			// Amount column should be consistent (around 42 chars from left)
-			assert.ok(dollarIndex >= 40 && dollarIndex <= 44, 
-				`Amount should be aligned around column 42, got ${dollarIndex}: ${line}`);
+		// Verify formatting matches default expectations
+		assert.ok(verifyIndentation(formattedAndSorted), 'Posting lines should be indented with four spaces');
+		const amountGroups = collectAmountColumnsByTransaction(formattedAndSorted);
+		for (const group of amountGroups) {
+			if (group.length === 0) {
+				continue;
+			}
+			const uniqueColumns = new Set(group);
+			assert.strictEqual(uniqueColumns.size, 1, 'Each transaction should keep a single aligned amount column');
 		}
 	});
 
@@ -383,59 +385,53 @@ suite('Hledger Formatter Tests', () => {
   Assets:Cash   -$25.50`;
 
 		// Test with column position 30
-		const formatted30 = formatHledgerJournal(testInput, 30);
+		const formatted30 = formatHledgerJournal(testInput, { amountAlignment: 'fixedColumn', amountColumnPosition: 30 });
 		const lines30 = formatted30.split('\n');
 		
 		// Verify amounts are aligned at column 30
 		const amountLines30 = lines30.filter(line => line.includes('$'));
 		for (const line of amountLines30) {
-			const dollarIndex = line.indexOf('$');
-			// Check for negative amounts (-$) vs regular ($)
-			const actualIndex = line.includes('-$') ? line.indexOf('-$') + 1 : dollarIndex;
-			assert.ok(actualIndex >= 28 && actualIndex <= 32, 
-				`Amount should be aligned around column 30, got ${actualIndex}: ${line}`);
+			const digitIndex = line.search(/[0-9]/);
+			assert.ok(digitIndex >= 28 && digitIndex <= 32, 
+				`Amount digits should be aligned around column 30, got ${digitIndex}: ${line}`);
 		}
 		
 		// Test with column position 50
-		const formatted50 = formatHledgerJournal(testInput, 50);
+		const formatted50 = formatHledgerJournal(testInput, { amountAlignment: 'fixedColumn', amountColumnPosition: 50 });
 		const lines50 = formatted50.split('\n');
 		
 		// Verify amounts are aligned at column 50
 		const amountLines50 = lines50.filter(line => line.includes('$'));
 		for (const line of amountLines50) {
-			const dollarIndex = line.indexOf('$');
-			// Check for negative amounts (-$) vs regular ($)
-			const actualIndex = line.includes('-$') ? line.indexOf('-$') + 1 : dollarIndex;
-			assert.ok(actualIndex >= 48 && actualIndex <= 52, 
-				`Amount should be aligned around column 50, got ${actualIndex}: ${line}`);
+			const digitIndex = line.search(/[0-9]/);
+			assert.ok(digitIndex >= 48 && digitIndex <= 52, 
+				`Amount digits should be aligned around column 50, got ${digitIndex}: ${line}`);
 		}
 		
-		// Test with default column position (42)
-		const formattedDefault = formatHledgerJournal(testInput);
+		// Test with default column position (42) but fixed alignment
+		const formattedDefault = formatHledgerJournal(testInput, { amountAlignment: 'fixedColumn' });
 		const linesDefault = formattedDefault.split('\n');
 		
 		// Verify amounts are aligned at column 42 (default)
 		const amountLinesDefault = linesDefault.filter(line => line.includes('$'));
 		for (const line of amountLinesDefault) {
-			const dollarIndex = line.indexOf('$');
-			// Check for negative amounts (-$) vs regular ($)
-			const actualIndex = line.includes('-$') ? line.indexOf('-$') + 1 : dollarIndex;
-			assert.ok(actualIndex >= 40 && actualIndex <= 44, 
-				`Amount should be aligned around column 42 (default), got ${actualIndex}: ${line}`);
+			const digitIndex = line.search(/[0-9]/);
+			assert.ok(digitIndex >= 40 && digitIndex <= 44, 
+				`Amount digits should be aligned around column 42 (default), got ${digitIndex}: ${line}`);
 		}
 	});
 
-	test('Respects negative commodity style configuration', () => {
+	test('Respects alternate negative commodity style configuration', () => {
 		const testInput = `2025-04-01 Example
   Assets:Cash                $150.00
   Income:Salary             -$150.00`;
 
-		const formatted = formatHledgerJournal(testInput, { negativeCommodityStyle: 'symbolBeforeSign' });
+		const formatted = formatHledgerJournal(testInput, { negativeCommodityStyle: 'signBeforeSymbol' });
 		const lines = formatted.split('\n');
 		const incomeLine = lines.find(line => line.includes('Income:Salary'));
 		assert.ok(incomeLine, 'Income line should be present');
-		assert.ok(incomeLine?.includes('$-150.00'), 'Negative commodity should render as $- when configured');
-		assert.ok(!incomeLine?.includes('-$150.00'), 'Configured style should not emit -$ notation');
+		assert.ok(incomeLine?.includes('-$150.00'), 'Negative commodity should render as -$ when configured');
+		assert.ok(!incomeLine?.includes('$-150.00'), 'Configured style should not emit $- notation when overridden');
 	});
 
 	test('Aligns amounts by widest account when configured', () => {
@@ -447,7 +443,7 @@ suite('Hledger Formatter Tests', () => {
   A:B                                    $5.00
   C:D                                  -$5.00`;
 
-		const fixed = formatHledgerJournal(testInput);
+		const fixed = formatHledgerJournal(testInput, { amountAlignment: 'fixedColumn' });
 		const widest = formatHledgerJournal(testInput, { amountAlignment: 'widest' });
 
 		const fixedGroups = collectAmountColumnsByTransaction(fixed);
@@ -466,8 +462,8 @@ suite('Hledger Formatter Tests', () => {
 			const uniqueColumns = new Set(widestGroup);
 			assert.strictEqual(uniqueColumns.size, 1, 'Each transaction should have a single amount column when using widest alignment');
 
-			const widestColumn = widestGroup[0];
-			const fixedColumn = fixedGroup.length > 0 ? fixedGroup[0] : widestColumn;
+			const widestColumn = Math.min(...widestGroup);
+			const fixedColumn = fixedGroup.length > 0 ? Math.min(...fixedGroup) : widestColumn;
 			if (widestColumn < fixedColumn) {
 				observedImprovement = true;
 			}
@@ -500,8 +496,9 @@ suite('Hledger Formatter Tests', () => {
 			if (line.trim().startsWith(';')) {
 				continue;
 			}
-			if (line.includes('$')) {
-				current.push(line.indexOf('$'));
+			const digitIndex = firstDigitIndex(line);
+			if (digitIndex !== null) {
+				current.push(digitIndex);
 			}
 		}
 		if (current.length) {
@@ -510,15 +507,20 @@ suite('Hledger Formatter Tests', () => {
 		return result;
 	}
 
+	function firstDigitIndex(line: string): number | null {
+		const matchIndex = line.search(/[0-9]/);
+		return matchIndex === -1 ? null : matchIndex;
+	}
+
 	test('Uses configured indentation width', () => {
 		const testInput = `2025-06-01 Indentation test
   Assets:Cash                $75.00
   Income:Misc               -$75.00`;
 
-		const formatted = formatHledgerJournal(testInput, { indentationWidth: 4 });
+		const formatted = formatHledgerJournal(testInput, { indentationWidth: 2 });
 		const postingLines = formatted.split('\n').filter(line => line.trim().startsWith('Assets') || line.trim().startsWith('Income'));
 		for (const line of postingLines) {
-			assert.ok(line.startsWith('    '), 'Posting lines should start with four spaces when configured');
+			assert.ok(line.startsWith('  ') && !line.startsWith('   '), 'Posting lines should honor a two-space indentation override');
 		}
 	});
 
@@ -567,7 +569,7 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual('12', '12'.padStart(2, '0'), 'Month 12 should stay as "12"');
 	});
 
-	// Helper function to verify all posting lines have exactly 2 spaces of indentation
+	// Helper function to verify posting lines use the default indentation width (4 spaces)
 	function verifyIndentation(formattedText: string): boolean {
 		const lines = formattedText.split('\n');
 		let inTransaction = false;
@@ -592,8 +594,8 @@ suite('Hledger Formatter Tests', () => {
 			
 			// Check posting lines indentation
 			if (inTransaction) {
-				// Verify exactly 2 spaces indentation
-				if (!line.startsWith('  ') || line.startsWith('   ')) {
+				// Verify exactly 4 spaces indentation
+				if (!line.startsWith('    ') || line.startsWith('     ')) {
 					console.error(`Incorrect indentation at line ${i+1}: "${line}"`);
 					return false;
 				}
@@ -635,7 +637,7 @@ suite('Hledger Formatter Tests', () => {
 			// Process posting lines
 			if (inTransaction && !line.trim().startsWith(';')) {
 				// Check indentation
-				if (!line.startsWith('  ')) {
+				if (!line.startsWith('    ')) {
 					console.error(`Line ${i+1} doesn't have proper indentation: "${line}"`);
 					return false;
 				}
@@ -661,7 +663,7 @@ suite('Hledger Formatter Tests', () => {
 		return true;
 	}
 	
-	// Helper function to verify negative amounts are in -$X.XX format, not $-X.XX
+	// Helper function to verify negative amounts default to $-X.XX format
 	function verifyNegativeAmountFormat(formattedText: string): boolean {
 		const lines = formattedText.split('\n');
 		
@@ -673,14 +675,14 @@ suite('Hledger Formatter Tests', () => {
 				continue;
 			}
 			
-			// Look for any amount in $-X.XX format (incorrect)
-			if (line.includes('$-')) {
+			// Look for any amount in -$X.XX format (incorrect for default)
+			if (line.includes('-$')) {
 				console.error(`Line ${i+1} has incorrect negative amount format: "${line}"`);
 				return false;
 			}
 			
-			// Check for -$X.XX format (correct)
-			if (line.includes('-$')) {
+			// Check for $-X.XX format (correct)
+			if (line.includes('$-')) {
 				// This is the correct format
 				continue;
 			}

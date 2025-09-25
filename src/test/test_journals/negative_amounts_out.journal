@@ -1,10 +1,10 @@
 ; Test for negative amount formatting and alignment
 
 2023-03-01 Test Negative Amount Formats
-  assets:bank:checking                   -$85.50
-  expenses:food                          -$102.54
+    assets:bank:checking  $-85.50
+    expenses:food         $-102.54
 
 2023-03-02 Mixed Formats
-  expenses:utilities                     -$45.00
-  assets:bank:checking                   -$45.00
-  expenses:groceries                      $75.00
+    expenses:utilities    $-45.00
+    assets:bank:checking  $-45.00
+    expenses:groceries     $75.00

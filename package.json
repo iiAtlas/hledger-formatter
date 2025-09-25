@@ -101,7 +101,7 @@
             "Align posting amounts using the configured fixed column",
             "Align posting amounts based on the widest account name in each transaction"
           ],
-          "default": "fixedColumn",
+          "default": "widest",
           "description": "Controls how posting amounts are aligned"
         },
         "hledger-formatter.indentationWidth": {
@@ -110,8 +110,8 @@
             2,
             4
           ],
-          "default": 2,
-          "description": "Number of spaces used to indent postings"
+          "default": 4,
+          "description": "Number of spaces used to indent postings (default: 4)"
         },
         "hledger-formatter.negativeCommodityStyle": {
           "type": "string",
@@ -123,7 +123,7 @@
             "Format negative commodity amounts as -$100 (minus before the symbol)",
             "Format negative commodity amounts as $-100 (minus after the symbol)"
           ],
-          "default": "signBeforeSymbol",
+          "default": "symbolBeforeSign",
           "description": "Choose how negative commodity amounts are rendered"
         }
       }
