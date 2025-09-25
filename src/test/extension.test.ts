@@ -105,6 +105,36 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(correctNegativeFormat, true, 
 			'Negative amounts should be in -$X.XX format');
 	});
+
+	test('Format dates to default format with padding', () => {
+		const mixedDates = `2025/3/1 Sample transaction
+  Assets:Cash  $10.00
+  Income:Misc -$10.00
+
+2025.03.02 Second
+  Assets:Cash $5.00
+  Income:Misc -$5.00`;
+
+		const formatted = formatHledgerJournal(mixedDates);
+		const lines = formatted.split('\n');
+		assert.strictEqual(lines[0], '2025-03-01 Sample transaction');
+		assert.strictEqual(lines[4], '2025-03-02 Second');
+	});
+
+	test('Format dates to configured style', () => {
+		const original = `2025-03-01 Sample transaction
+  Assets:Cash  $10.00
+  Income:Misc -$10.00
+
+2025-03-02 Another one
+  Assets:Cash $5.00
+  Income:Misc -$5.00`;
+
+		const formatted = formatHledgerJournal(original, { dateFormat: 'YYYY/MM/DD' });
+		const lines = formatted.split('\n');
+		assert.strictEqual(lines[0], '2025/03/01 Sample transaction');
+		assert.strictEqual(lines[4], '2025/03/02 Another one');
+	});
 	
 	test('Correct alignment of negative amounts', () => {
 		// Read input and expected output files
@@ -290,6 +320,25 @@ suite('Hledger Formatter Tests', () => {
 		// Verify the sorted output matches the expected output
 		assert.strictEqual(normalizedSorted, normalizedExpected,
 			'Sorted journal should match expected output');
+	});
+
+	test('Sorts mixed date formats without rewriting them', () => {
+		const mixedInput = `2025/03/05 Transaction slash
+  Assets:Cash $5.00
+  Income:Misc -$5.00
+
+2025-03-01 Transaction dash
+  Assets:Cash $1.00
+  Income:Misc -$1.00
+
+2025.03.03 Transaction dot
+  Assets:Cash $3.00
+  Income:Misc -$3.00`;
+
+		const sorted = sortHledgerJournal(mixedInput);
+		const expectedOrder = ['2025-03-01 Transaction dash', '2025.03.03 Transaction dot', '2025/03/05 Transaction slash'];
+		const actualHeaders = sorted.split('\n').filter(line => isDateLine(line));
+		assert.deepStrictEqual(actualHeaders, expectedOrder, 'Dates should remain in their original format while being sorted by value');
 	});
 
 	test('Sort maintains transaction integrity', () => {
@@ -505,6 +554,10 @@ suite('Hledger Formatter Tests', () => {
 			result.push(current);
 		}
 		return result;
+	}
+
+	function isDateLine(line: string): boolean {
+		return /^\d{4}[-/.]/.test(line);
 	}
 
 	function firstDigitIndex(line: string): number | null {

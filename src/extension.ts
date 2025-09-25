@@ -4,19 +4,22 @@ import * as vscode from 'vscode';
 
 type AmountAlignment = 'fixedColumn' | 'widest';
 type NegativeCommodityStyle = 'signBeforeSymbol' | 'symbolBeforeSign';
+type DateFormatStyle = 'YYYY-MM-DD' | 'YYYY/MM/DD' | 'YYYY.MM.DD';
 
 export interface FormatterOptions {
 	amountColumnPosition: number;
 	amountAlignment: AmountAlignment;
 	indentationWidth: number;
 	negativeCommodityStyle: NegativeCommodityStyle;
+	dateFormat: DateFormatStyle;
 }
 
 const DEFAULT_FORMATTER_OPTIONS: FormatterOptions = {
 	amountColumnPosition: 42,
 	amountAlignment: 'widest',
 	indentationWidth: 4,
-	negativeCommodityStyle: 'symbolBeforeSign'
+	negativeCommodityStyle: 'symbolBeforeSign',
+	dateFormat: 'YYYY-MM-DD'
 };
 
 function getFormatterOptionsFromConfiguration(config?: vscode.WorkspaceConfiguration): FormatterOptions {
@@ -25,7 +28,8 @@ function getFormatterOptionsFromConfiguration(config?: vscode.WorkspaceConfigura
 		amountColumnPosition: sourceConfig.get<number>('amountColumnPosition', DEFAULT_FORMATTER_OPTIONS.amountColumnPosition),
 		amountAlignment: sourceConfig.get<AmountAlignment>('amountAlignment', DEFAULT_FORMATTER_OPTIONS.amountAlignment),
 		indentationWidth: sourceConfig.get<number>('indentationWidth', DEFAULT_FORMATTER_OPTIONS.indentationWidth),
-		negativeCommodityStyle: sourceConfig.get<NegativeCommodityStyle>('negativeCommodityStyle', DEFAULT_FORMATTER_OPTIONS.negativeCommodityStyle)
+		negativeCommodityStyle: sourceConfig.get<NegativeCommodityStyle>('negativeCommodityStyle', DEFAULT_FORMATTER_OPTIONS.negativeCommodityStyle),
+		dateFormat: sourceConfig.get<DateFormatStyle>('dateFormat', DEFAULT_FORMATTER_OPTIONS.dateFormat)
 	};
 }
 
@@ -46,12 +50,18 @@ function normalizeFormatterOptions(optionsOrColumn?: number | Partial<FormatterO
 	const negativeCommodityStyle: NegativeCommodityStyle = merged.negativeCommodityStyle === 'symbolBeforeSign'
 		? 'symbolBeforeSign'
 		: 'signBeforeSymbol';
+	const dateFormat: DateFormatStyle = merged.dateFormat === 'YYYY/MM/DD'
+		? 'YYYY/MM/DD'
+		: merged.dateFormat === 'YYYY.MM.DD'
+			? 'YYYY.MM.DD'
+			: 'YYYY-MM-DD';
 
 	return {
 		amountColumnPosition,
 		amountAlignment,
 		indentationWidth,
-		negativeCommodityStyle
+		negativeCommodityStyle,
+		dateFormat
 	};
 }
 
@@ -390,9 +400,7 @@ export function formatHledgerJournal(text: string, optionsOrColumn?: number | Pa
 			continue;
 		}
 
-		const isTransactionHeader = /^\d{4}[/-]\d{2}[/-]\d{2}/.test(trimmed);
-
-		if (isTransactionHeader) {
+		if (isTransactionHeaderLine(trimmed)) {
 			if (inTransaction) {
 				formattedLines.push(...formatTransaction(transactionLines, options));
 				formattedLines.push('');
@@ -440,7 +448,7 @@ function formatTransaction(lines: string[], options: FormatterOptions): string[]
 	}
 
 	const headerLine = lines[0];
-	const formattedHeader = formatTransactionHeader(headerLine);
+	const formattedHeader = formatTransactionHeader(headerLine, options);
 
 	const formattedLines: string[] = [formattedHeader];
 	const postingLines: string[] = [];
@@ -595,25 +603,118 @@ function getDigitsPrefixLength(amount: string): number {
  * @param headerLine The transaction header line
  * @returns Formatted transaction header line
  */
-function formatTransactionHeader(headerLine: string): string {
-	// Match date, optional status marker (*,!), and description
-	const headerMatch = headerLine.match(/^(\d{4}[/-]\d{2}[/-]\d{2})(?:\s+)([*!])?(?:\s*)(.*)$/);
-	
-	if (headerMatch) {
-		const date = headerMatch[1];
-		const statusMarker = headerMatch[2] || '';
-		const description = headerMatch[3];
-		
-		// Create properly formatted header with single spaces
-		if (statusMarker) {
-			return `${date} ${statusMarker} ${description}`;
-		} else {
-			return `${date} ${description}`;
+const TRANSACTION_DATE_PREFIX = /^(\d{4})([-/.])(\d{1,2})\2(\d{1,2})/;
+
+interface DateComponents {
+	year: number;
+	month: number;
+	day: number;
+}
+
+function extractDateComponents(text: string): { components: DateComponents; raw: string } | null {
+	const match = text.match(TRANSACTION_DATE_PREFIX);
+	if (!match) {
+		return null;
+	}
+
+	const year = Number(match[1]);
+	const month = Number(match[3]);
+	const day = Number(match[4]);
+
+	if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+		return null;
+	}
+
+	if (month < 1 || month > 12 || day < 1 || day > 31) {
+		return null;
+	}
+
+	return {
+		components: { year, month, day },
+		raw: match[0]
+	};
+}
+
+function formatDate(components: DateComponents, format: DateFormatStyle): string {
+	const year = components.year.toString().padStart(4, '0');
+	const month = components.month.toString().padStart(2, '0');
+	const day = components.day.toString().padStart(2, '0');
+
+	switch (format) {
+		case 'YYYY/MM/DD':
+			return `${year}/${month}/${day}`;
+		case 'YYYY.MM.DD':
+			return `${year}.${month}.${day}`;
+		case 'YYYY-MM-DD':
+		default:
+			return `${year}-${month}-${day}`;
+	}
+}
+
+function toIsoDate(components: DateComponents): string {
+	const year = components.year.toString().padStart(4, '0');
+	const month = components.month.toString().padStart(2, '0');
+	const day = components.day.toString().padStart(2, '0');
+	return `${year}-${month}-${day}`;
+}
+
+function isTransactionHeaderLine(line: string): boolean {
+	const trimmed = line.trim();
+	return extractDateComponents(trimmed) !== null;
+}
+
+function formatTransactionHeader(headerLine: string, options: FormatterOptions): string {
+	const commentRegex = /\s*;.*$/;
+	const commentIndex = headerLine.search(commentRegex);
+	const commentPart = commentIndex !== -1 ? headerLine.slice(commentIndex) : '';
+	const headerWithoutComment = commentIndex !== -1 ? headerLine.slice(0, commentIndex) : headerLine;
+	const leadingWhitespace = headerWithoutComment.match(/^\s*/)?.[0] ?? '';
+	const trimmedHeader = headerWithoutComment.trim();
+	if (!trimmedHeader) {
+		return headerLine;
+	}
+
+	const dateInfo = extractDateComponents(trimmedHeader);
+	if (!dateInfo) {
+		return headerLine;
+	}
+
+	const { components, raw } = dateInfo;
+	let remainder = trimmedHeader.slice(raw.length).trimStart();
+	let status = '';
+	if (remainder.startsWith('*') || remainder.startsWith('!')) {
+		status = remainder.charAt(0);
+		remainder = remainder.slice(1).trimStart();
+	}
+
+	let code = '';
+	if (remainder.startsWith('(')) {
+		const codeMatch = remainder.match(/^\([^)]*\)/);
+		if (codeMatch) {
+			code = codeMatch[0];
+			remainder = remainder.slice(codeMatch[0].length).trimStart();
 		}
 	}
-	
-	// If no match, return the original line
-	return headerLine;
+
+	const description = remainder;
+	const formattedDate = formatDate(components, options.dateFormat);
+	const segments: string[] = [formattedDate];
+	if (status) {
+		segments.push(status);
+	}
+	if (code) {
+		segments.push(code);
+	}
+	if (description) {
+		segments.push(description);
+	}
+
+	const baseHeader = `${leadingWhitespace}${segments.join(' ')}`;
+	if (!commentPart) {
+		return baseHeader;
+	}
+
+	return commentPart.startsWith(';') ? `${baseHeader}${commentPart}` : `${baseHeader}${commentPart}`;
 }
 
 /**
@@ -682,11 +783,10 @@ function parseTransactionsWithLeading(text: string): {
 	
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
+		const trimmed = line.trim();
+		const dateInfo = extractDateComponents(trimmed);
 		
-		// Check if this is a transaction header (date at the beginning)
-		const dateMatch = line.match(/^(\d{4}[/-]\d{2}[/-]\d{2})/);
-		
-		if (dateMatch) {
+		if (dateInfo) {
 			hasSeenTransaction = true;
 			// If we had a previous transaction, save it
 			if (inTransaction && currentTransaction.length > 0) {
@@ -697,7 +797,7 @@ function parseTransactionsWithLeading(text: string): {
 			}
 			
 			// Start new transaction
-			currentDate = dateMatch[1];
+			currentDate = toIsoDate(dateInfo.components);
 			currentTransaction = [line];
 			inTransaction = true;
 		} else if (inTransaction) {
@@ -707,9 +807,9 @@ function parseTransactionsWithLeading(text: string): {
 				// But we need to check if the next non-empty line is a new transaction
 				let nextTransactionFound = false;
 				for (let j = i + 1; j < lines.length; j++) {
-					if (lines[j].trim()) {
-						// Found next non-empty line
-						if (/^\d{4}[/-]\d{2}[/-]\d{2}/.test(lines[j])) {
+					const lookaheadTrimmed = lines[j].trim();
+					if (lookaheadTrimmed) {
+						if (isTransactionHeaderLine(lookaheadTrimmed)) {
 							nextTransactionFound = true;
 						}
 						break;

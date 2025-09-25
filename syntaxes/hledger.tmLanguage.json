@@ -63,15 +63,15 @@
       "patterns": [
         {
           "name": "meta.transaction.reconciled.hledger",
-          "match": "^(\\d{4}[-/]\\d{2}[-/]\\d{2})\\s+(\\*)(?:\\s+(.*))?$",
+          "match": "^(\\d{4}([-\\/.])\\d{1,2}\\2\\d{1,2})\\s+(\\*)(?:\\s+(.*))?$",
           "captures": {
             "1": {
               "name": "constant.numeric.date.hledger"
             },
-            "2": {
+            "3": {
               "name": "keyword.operator.status.reconciled.hledger"
             },
-            "3": {
+            "4": {
               "name": "string.unquoted.description.reconciled.hledger",
               "patterns": [
                 {
@@ -83,15 +83,15 @@
         },
         {
           "name": "meta.transaction.pending.hledger",
-          "match": "^(\\d{4}[-/]\\d{2}[-/]\\d{2})\\s+(!)(?:\\s+(.*))?$",
+          "match": "^(\\d{4}([-\\/.])\\d{1,2}\\2\\d{1,2})\\s+(!)(?:\\s+(.*))?$",
           "captures": {
             "1": {
               "name": "constant.numeric.date.hledger"
             },
-            "2": {
+            "3": {
               "name": "keyword.operator.status.pending.hledger"
             },
-            "3": {
+            "4": {
               "name": "string.unquoted.description.pending.hledger",
               "patterns": [
                 {
@@ -103,12 +103,12 @@
         },
         {
           "name": "meta.transaction.unreconciled.hledger",
-          "match": "^(\\d{4}[-/]\\d{2}[-/]\\d{2})(?:\\s+([^*!].*))?$",
+          "match": "^(\\d{4}([-\\/.])\\d{1,2}\\2\\d{1,2})(?:\\s+([^*!].*))?$",
           "captures": {
             "1": {
               "name": "constant.numeric.date.hledger"
             },
-            "2": {
+            "3": {
               "name": "string.unquoted.description.unreconciled.hledger",
               "patterns": [
                 {

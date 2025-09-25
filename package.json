@@ -125,6 +125,21 @@
           ],
           "default": "symbolBeforeSign",
           "description": "Choose how negative commodity amounts are rendered"
+        },
+        "hledger-formatter.dateFormat": {
+          "type": "string",
+          "enum": [
+            "YYYY-MM-DD",
+            "YYYY/MM/DD",
+            "YYYY.MM.DD"
+          ],
+          "enumDescriptions": [
+            "Format transaction dates with dashes (e.g. 2025-03-01)",
+            "Format transaction dates with slashes (e.g. 2025/03/01)",
+            "Format transaction dates with dots (e.g. 2025.03.01)"
+          ],
+          "default": "YYYY-MM-DD",
+          "description": "Preferred transaction date format"
         }
       }
     },
