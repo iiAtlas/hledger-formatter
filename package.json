@@ -76,12 +76,12 @@
       "properties": {
         "hledger-formatter.formatOnSave": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Format HLedger journal files on save"
         },
         "hledger-formatter.sortOnSave": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Sort HLedger journal entries by date on save"
         },
         "hledger-formatter.amountColumnPosition": {

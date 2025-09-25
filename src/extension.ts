@@ -112,8 +112,8 @@ export function activate(context: vscode.ExtensionContext) {
 			document.fileName.endsWith('.ledger')) {
 			
 			const config = vscode.workspace.getConfiguration('hledger-formatter');
-			const formatOnSave = config.get('formatOnSave', true);
-			const sortOnSave = config.get('sortOnSave', true);
+			const formatOnSave = config.get('formatOnSave', false);
+			const sortOnSave = config.get('sortOnSave', false);
 			
 			if (formatOnSave || sortOnSave) {
 				let text = document.getText();
