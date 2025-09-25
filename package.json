@@ -89,7 +89,7 @@
           "default": 42,
           "minimum": 20,
           "maximum": 100,
-          "description": "Column position for aligning amounts (default: 42)"
+          "description": "Column position for aligning amounts when using fixed column alignment mode (default: 42)"
         },
         "hledger-formatter.amountAlignment": {
           "type": "string",
