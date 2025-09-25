@@ -11,9 +11,10 @@ A VS Code extension to make editing hledger journal files a bit more fun.
 - Automatically aligns account names and amounts in hledger journal files
 - Rich syntax highlighting with hierarchical account coloring
 - Sort journal entries by date (`Shift+Cmd+S`)
-- Sort on save option (enabled by default)
+- Format on save / Sort on save options (disabled by default)
 - Toggle comment lines (`Cmd+/`)
 - Create new monthly journal files (`Cmd+N`)
+- Matches HLedger defaults, but highly configurable to your preference (See VSCode settings under "HLedger")
 
 ## Demo
 
@@ -54,9 +55,13 @@ Automatically sorts transactions chronologically:
 
 This extension contributes the following settings:
 
-* `hledger-formatter.formatOnSave`: Enable/disable formatting on save (default: true)
-* `hledger-formatter.sortOnSave`: Enable/disable sorting entries by date on save (default: true)
+* `hledger-formatter.formatOnSave`: Enable/disable formatting on save (default: false)
+* `hledger-formatter.sortOnSave`: Enable/disable sorting entries by date on save (default: false)
 * `hledger-formatter.amountColumnPosition`: Column position for aligning amounts (default: 42, range: 20-100)
+* `hledger-formatter.amountAlignment`: Choose between a fixed column or per-transaction widest alignment (default: widest)
+* `hledger-formatter.indentationWidth`: Posting indentation width in spaces (default: 4)
+* `hledger-formatter.negativeCommodityStyle`: Render negatives as `-$` or `$-` (default: `$-`)
+* `hledger-formatter.dateFormat`: Preferred transaction date layout (`YYYY-MM-DD`, `YYYY/MM/DD`, `YYYY.MM.DD`)
 
 ## Example
 

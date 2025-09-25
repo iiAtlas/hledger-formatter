@@ -76,12 +76,12 @@
       "properties": {
         "hledger-formatter.formatOnSave": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Format HLedger journal files on save"
         },
         "hledger-formatter.sortOnSave": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Sort HLedger journal entries by date on save"
         },
         "hledger-formatter.amountColumnPosition": {
@@ -89,7 +89,57 @@
           "default": 42,
           "minimum": 20,
           "maximum": 100,
-          "description": "Column position for aligning amounts (default: 42)"
+          "description": "Column position for aligning amounts when using fixed column alignment mode (default: 42)"
+        },
+        "hledger-formatter.amountAlignment": {
+          "type": "string",
+          "enum": [
+            "fixedColumn",
+            "widest"
+          ],
+          "enumDescriptions": [
+            "Align posting amounts using the configured fixed column",
+            "Align posting amounts based on the widest account name in each transaction"
+          ],
+          "default": "widest",
+          "description": "Controls how posting amounts are aligned"
+        },
+        "hledger-formatter.indentationWidth": {
+          "type": "number",
+          "enum": [
+            2,
+            4
+          ],
+          "default": 4,
+          "description": "Number of spaces used to indent postings (default: 4)"
+        },
+        "hledger-formatter.negativeCommodityStyle": {
+          "type": "string",
+          "enum": [
+            "signBeforeSymbol",
+            "symbolBeforeSign"
+          ],
+          "enumDescriptions": [
+            "Format negative commodity amounts as -$100 (minus before the symbol)",
+            "Format negative commodity amounts as $-100 (minus after the symbol)"
+          ],
+          "default": "symbolBeforeSign",
+          "description": "Choose how negative commodity amounts are rendered"
+        },
+        "hledger-formatter.dateFormat": {
+          "type": "string",
+          "enum": [
+            "YYYY-MM-DD",
+            "YYYY/MM/DD",
+            "YYYY.MM.DD"
+          ],
+          "enumDescriptions": [
+            "Format transaction dates with dashes (e.g. 2025-03-01)",
+            "Format transaction dates with slashes (e.g. 2025/03/01)",
+            "Format transaction dates with dots (e.g. 2025.03.01)"
+          ],
+          "default": "YYYY-MM-DD",
+          "description": "Preferred transaction date format"
         }
       }
     },
