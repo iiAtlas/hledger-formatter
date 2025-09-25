@@ -14,6 +14,7 @@ A VS Code extension to make editing hledger journal files a bit more fun.
 - Format on save / Sort on save options (disabled by default)
 - Toggle comment lines (`Cmd+/`)
 - Create new monthly journal files (`Cmd+N`)
+- Matches HLedger defaults, but highly configurable to your preference (See VSCode settings under "HLedger")
 
 ## Demo
 
