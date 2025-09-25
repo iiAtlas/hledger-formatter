@@ -2,7 +2,7 @@
 
 All notable changes to the "hledger-formatter" extension will be documented in this file.
 
-## [Unreleased]
+## [1.0.5]
 
 This update works to bring the extension defaults closer to HLedger’s, including date formats, spacing, and handling of the negative commodity sign.
 
