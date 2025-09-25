@@ -4,6 +4,18 @@ All notable changes to the "hledger-formatter" extension will be documented in t
 
 ## [Unreleased]
 
+This update works to bring the extension defaults closer to HLedger’s, including date formats, spacing, and handling of the negative commodity sign.
+
+### Added
+- Configurable transaction date format (`hledger-formatter.dateFormat`)
+  - Mixed date-format parsing in both the formatter and sorter so `/`, `-`, or `.` separators are recognised interchangeably
+  - Syntax highlighting update to recognise dotted dates alongside slashes/dashes
+- Default negative commodity style now matches `hledger print` (`$-`) via `hledger-formatter.negativeCommodityStyle`, with the previous `-$` layout still available through the same setting
+
+### Changed
+- `formatOnSave` and `sortOnSave` now default to `false`, aligning with hledger’s default
+- Sorting consumes parsed date components but preserves the original string formatting so journals stay untouched unless formatting is requested
+
 ## [1.0.4] - September 24, 2025
 
 - Removed unused test files from generated VSCode package
