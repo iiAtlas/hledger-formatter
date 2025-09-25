@@ -2,6 +2,59 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
+type AmountAlignment = 'fixedColumn' | 'widest';
+type NegativeCommodityStyle = 'signBeforeSymbol' | 'symbolBeforeSign';
+
+export interface FormatterOptions {
+	amountColumnPosition: number;
+	amountAlignment: AmountAlignment;
+	indentationWidth: number;
+	negativeCommodityStyle: NegativeCommodityStyle;
+}
+
+const DEFAULT_FORMATTER_OPTIONS: FormatterOptions = {
+	amountColumnPosition: 42,
+	amountAlignment: 'fixedColumn',
+	indentationWidth: 2,
+	negativeCommodityStyle: 'signBeforeSymbol'
+};
+
+function getFormatterOptionsFromConfiguration(config?: vscode.WorkspaceConfiguration): FormatterOptions {
+	const sourceConfig = config ?? vscode.workspace.getConfiguration('hledger-formatter');
+	return {
+		amountColumnPosition: sourceConfig.get<number>('amountColumnPosition', DEFAULT_FORMATTER_OPTIONS.amountColumnPosition),
+		amountAlignment: sourceConfig.get<AmountAlignment>('amountAlignment', DEFAULT_FORMATTER_OPTIONS.amountAlignment),
+		indentationWidth: sourceConfig.get<number>('indentationWidth', DEFAULT_FORMATTER_OPTIONS.indentationWidth),
+		negativeCommodityStyle: sourceConfig.get<NegativeCommodityStyle>('negativeCommodityStyle', DEFAULT_FORMATTER_OPTIONS.negativeCommodityStyle)
+	};
+}
+
+function normalizeFormatterOptions(optionsOrColumn?: number | Partial<FormatterOptions>): FormatterOptions {
+	const merged: Partial<FormatterOptions> = typeof optionsOrColumn === 'number'
+		? { ...DEFAULT_FORMATTER_OPTIONS, amountColumnPosition: optionsOrColumn }
+		: { ...DEFAULT_FORMATTER_OPTIONS, ...(optionsOrColumn ?? {}) };
+
+	const amountColumnPosition = typeof merged.amountColumnPosition === 'number'
+		? Math.max(0, Math.floor(merged.amountColumnPosition))
+		: DEFAULT_FORMATTER_OPTIONS.amountColumnPosition;
+
+	const indentationWidth = typeof merged.indentationWidth === 'number'
+		? Math.max(0, Math.floor(merged.indentationWidth))
+		: DEFAULT_FORMATTER_OPTIONS.indentationWidth;
+
+	const amountAlignment: AmountAlignment = merged.amountAlignment === 'widest' ? 'widest' : 'fixedColumn';
+	const negativeCommodityStyle: NegativeCommodityStyle = merged.negativeCommodityStyle === 'symbolBeforeSign'
+		? 'symbolBeforeSign'
+		: 'signBeforeSymbol';
+
+	return {
+		amountColumnPosition,
+		amountAlignment,
+		indentationWidth,
+		negativeCommodityStyle
+	};
+}
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -31,8 +84,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 		const text = document.getText();
 		const config = vscode.workspace.getConfiguration('hledger-formatter');
-		const amountColumnPosition = config.get('amountColumnPosition', 42);
-		const formattedText = formatHledgerJournal(text, amountColumnPosition);
+		const formatterOptions = getFormatterOptionsFromConfiguration(config);
+		const formattedText = formatHledgerJournal(text, formatterOptions);
 		
 		editor.edit((editBuilder) => {
 			const fullRange = new vscode.Range(
@@ -72,8 +125,8 @@ export function activate(context: vscode.ExtensionContext) {
 				
 				// Apply formatting if enabled
 				if (formatOnSave) {
-					const amountColumnPosition = config.get('amountColumnPosition', 42);
-					text = formatHledgerJournal(text, amountColumnPosition);
+					const formatterOptions = getFormatterOptionsFromConfiguration(config);
+					text = formatHledgerJournal(text, formatterOptions);
 				}
 				
 				event.waitUntil(Promise.resolve([
@@ -100,8 +153,8 @@ export function activate(context: vscode.ExtensionContext) {
 			provideDocumentFormattingEdits(document: vscode.TextDocument): vscode.TextEdit[] {
 				const text = document.getText();
 				const config = vscode.workspace.getConfiguration('hledger-formatter');
-				const amountColumnPosition = config.get('amountColumnPosition', 42);
-				const formattedText = formatHledgerJournal(text, amountColumnPosition);
+				const formatterOptions = getFormatterOptionsFromConfiguration(config);
+				const formattedText = formatHledgerJournal(text, formatterOptions);
 				
 				return [
 					new vscode.TextEdit(
@@ -132,8 +185,8 @@ export function activate(context: vscode.ExtensionContext) {
 				// A more advanced implementation could format just the selected transactions
 				const text = document.getText();
 				const config = vscode.workspace.getConfiguration('hledger-formatter');
-				const amountColumnPosition = config.get('amountColumnPosition', 42);
-				const formattedText = formatHledgerJournal(text, amountColumnPosition);
+				const formatterOptions = getFormatterOptionsFromConfiguration(config);
+				const formattedText = formatHledgerJournal(text, formatterOptions);
 
 				return [
 					new vscode.TextEdit(
@@ -295,46 +348,39 @@ export function activate(context: vscode.ExtensionContext) {
 /**
  * Formats a hledger journal text by aligning account names and amounts
  * @param text The original journal text
- * @param amountColumnPosition The column position for aligning amounts (default: 42)
+ * @param optionsOrColumn Optional formatter options or an amount column position for backward compatibility
  * @returns The formatted journal text
  */
-export function formatHledgerJournal(text: string, amountColumnPosition: number = 42): string {
-	// Split the text into transactions
+export function formatHledgerJournal(text: string, optionsOrColumn?: number | Partial<FormatterOptions>): string {
+	const options = normalizeFormatterOptions(optionsOrColumn);
 	const lines = text.split('\n');
 	const formattedLines: string[] = [];
-	
+
 	let inTransaction = false;
 	let transactionLines: string[] = [];
 	let lastWasTransaction = false;
-	let hasContent = false; // Track if we've seen any non-empty content
-	
-	// Process line by line
+	let hasContent = false;
+
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
-		
-		// Skip empty lines or keep them as-is
-		if (!line.trim()) {
+		const trimmed = line.trim();
+
+		if (!trimmed) {
 			if (inTransaction) {
-				// End of transaction
-				formattedLines.push(...formatTransaction(transactionLines, amountColumnPosition));
+				formattedLines.push(...formatTransaction(transactionLines, options));
 				transactionLines = [];
 				inTransaction = false;
 				lastWasTransaction = true;
 				hasContent = true;
-				// Add exactly one blank line after transaction
 				formattedLines.push('');
 			} else if (!lastWasTransaction && hasContent) {
-				// Only keep empty lines that are not at the start and not between transactions
 				formattedLines.push(line);
 			}
-			// Skip empty lines at the start or that come after we just added one
 			continue;
 		}
-		
-		// Comment lines
-		if (line.trim().startsWith(';')) {
+
+		if (trimmed.startsWith(';')) {
 			if (inTransaction) {
-				// Comments within transactions are part of the transaction
 				transactionLines.push(line);
 			} else {
 				formattedLines.push(line);
@@ -343,148 +389,173 @@ export function formatHledgerJournal(text: string, amountColumnPosition: number 
 			}
 			continue;
 		}
-		
-		// Check if this is a transaction header (date at the beginning)
-		const isTransactionHeader = /^\d{4}[/-]\d{2}[/-]\d{2}/.test(line.trim());
-		
+
+		const isTransactionHeader = /^\d{4}[/-]\d{2}[/-]\d{2}/.test(trimmed);
+
 		if (isTransactionHeader) {
 			if (inTransaction) {
-				// End previous transaction and format it
-				formattedLines.push(...formatTransaction(transactionLines, amountColumnPosition));
-				// Add exactly one blank line between transactions
+				formattedLines.push(...formatTransaction(transactionLines, options));
 				formattedLines.push('');
 				transactionLines = [];
 			}
-			
-			// Start new transaction
+
 			inTransaction = true;
 			transactionLines.push(line);
 			lastWasTransaction = false;
 			hasContent = true;
 		} else if (inTransaction) {
-			// Posting line within transaction
 			transactionLines.push(line);
 		} else {
-			// Neither transaction header nor posting, keep as-is
 			formattedLines.push(line);
 			lastWasTransaction = false;
 			hasContent = true;
 		}
 	}
-	
-	// Format the last transaction if any
+
 	if (inTransaction && transactionLines.length > 0) {
-		formattedLines.push(...formatTransaction(transactionLines, amountColumnPosition));
-		// Add one blank line at the end after the last transaction
+		formattedLines.push(...formatTransaction(transactionLines, options));
 		formattedLines.push('');
 	}
-	
-	// Remove any leading blank lines
+
 	while (formattedLines.length > 0 && formattedLines[0] === '') {
 		formattedLines.shift();
 	}
-	
-	// Remove any trailing empty lines beyond one
+
 	while (formattedLines.length > 1 && formattedLines[formattedLines.length - 1] === '' && formattedLines[formattedLines.length - 2] === '') {
 		formattedLines.pop();
 	}
-	
+
 	return formattedLines.join('\n');
 }
 
 /**
  * Formats a single transaction by aligning account names and amounts
  * @param lines Lines of a transaction including header and postings
- * @param amountColumnPosition The column position for aligning amounts
+ * @param options Formatter options to drive indentation and amount alignment
  * @returns Formatted transaction lines
  */
-function formatTransaction(lines: string[], amountColumnPosition: number): string[] {
+function formatTransaction(lines: string[], options: FormatterOptions): string[] {
 	if (lines.length <= 1) {
 		return lines;
 	}
 
-	// Format header line to normalize spaces
 	const headerLine = lines[0];
 	const formattedHeader = formatTransactionHeader(headerLine);
-	
-	const formattedLines: string[] = [formattedHeader]; // Use formatted header
+
+	const formattedLines: string[] = [formattedHeader];
 	const postingLines: string[] = [];
-	
-	// Find posting lines (non-comment lines after header)
+
 	for (let i = 1; i < lines.length; i++) {
 		if (!lines[i].trim().startsWith(';')) {
 			postingLines.push(lines[i]);
 		} else {
-			// Keep comment lines as-is
 			formattedLines.push(lines[i]);
 		}
 	}
-	
+
 	if (postingLines.length === 0) {
 		return formattedLines;
 	}
-	
-	// Use the configurable column position for all amounts
-	const fixedAmountColumn = amountColumnPosition;
-	
-	// Process each posting line
-	for (const line of postingLines) {
-		// Always use exactly 2 spaces for indentation
-		const indentStr = '  ';
-		
-		// Extract account and amount
-		const trimmed = line.trim();
-		
-		// Enhanced regex to better handle various amount formats including $-85.50
-		const accountAmountSeparator = /\s{2,}|\t+/; // Two or more spaces or tabs
-		const parts = trimmed.split(accountAmountSeparator);
-		
-		if (parts.length >= 2) {
-			// We have an account and amount with clear separation
-			const account = parts[0].trim();
-			let amount = parts.slice(1).join(' ').trim(); // Join in case there were multiple parts
-			
-			// Check if this is a negative amount (either $- format or -$ format)
-			const isNegative = amount.match(/^\$-/) || amount.match(/^-\$/);
-			
-			// Transform $-X.XX to -$X.XX format
-			const currencyNegativeRegex = /^(\$|€|£|¥)-(\d+(?:,\d+)*(?:\.\d+)?)/;
-			amount = amount.replace(currencyNegativeRegex, '-$1$2');
-			
-			// Calculate padding needed to align all amounts at the fixed column
-			// Subtract 1 from padding for negative amounts to maintain alignment
-			const paddingNeeded = Math.max(1, fixedAmountColumn - (indentStr.length + account.length) - (isNegative ? 1 : 0));
-			
-			formattedLines.push(`${indentStr}${account}${' '.repeat(paddingNeeded)}${amount}`);
-		} else {
-			// Fallback: Try to extract account and amount with a regex pattern
-			// This handles cases where there might not be clear spacing
-			const fallbackMatch = trimmed.match(/^(\S+(?:\s+\S+)*?)(?:\s*)(\$-?\d+(?:\.\d+)?|\-\$\d+(?:\.\d+)?|\d+(?:\.\d+)?)$/);
-			
-			if (fallbackMatch) {
-				const account = fallbackMatch[1].trim();
-				let amount = fallbackMatch[2].trim();
-				
-				// Check if this is a negative amount (either $- format or -$ format)
-				const isNegative = amount.match(/^\$-/) || amount.match(/^-\$/);
-				
-				// Transform $-X.XX to -$X.XX format
-				const currencyNegativeRegex = /^(\$|€|£|¥)-(\d+(?:,\d+)*(?:\.\d+)?)/;
-				amount = amount.replace(currencyNegativeRegex, '-$1$2');
-				
-				// Calculate padding needed to align all amounts at the fixed column
-				// Subtract 1 from padding for negative amounts to maintain alignment
-				const paddingNeeded = Math.max(1, fixedAmountColumn - (indentStr.length + account.length) - (isNegative ? 1 : 0));
-				
-				formattedLines.push(`${indentStr}${account}${' '.repeat(paddingNeeded)}${amount}`);
-			} else {
-				// Line might have just an account with no amount, or unusual formatting
-				formattedLines.push(`${indentStr}${trimmed}`);
-			}
+
+	const indentWidth = Math.max(0, options.indentationWidth);
+	const indentStr = ' '.repeat(indentWidth);
+	const postingDetails = postingLines.map(extractPostingDetail);
+	const maxAccountLength = postingDetails.reduce((max, detail) => {
+		if (detail.account) {
+			return Math.max(max, detail.account.length);
 		}
+		return max;
+	}, 0);
+
+	for (const detail of postingDetails) {
+		if (!detail.account) {
+			formattedLines.push(`${indentStr}${detail.trimmed}`);
+			continue;
+		}
+
+		const { formatted: amount, hasLeadingNegativeCurrency } = formatAmountWithStyle(
+			detail.amount && detail.amount.length > 0 ? detail.amount : null,
+			options.negativeCommodityStyle
+		);
+
+		if (!amount) {
+			formattedLines.push(`${indentStr}${detail.trimmed}`);
+			continue;
+		}
+
+		let paddingNeeded: number;
+		if (options.amountAlignment === 'widest') {
+			const referenceAccountLength = maxAccountLength > 0 ? maxAccountLength : detail.account.length;
+			const baseColumn = indentWidth + referenceAccountLength + 2;
+			paddingNeeded = baseColumn - (indentWidth + detail.account.length);
+		} else {
+			paddingNeeded = options.amountColumnPosition - (indentWidth + detail.account.length);
+		}
+
+		if (hasLeadingNegativeCurrency) {
+			paddingNeeded -= 1;
+		}
+
+		paddingNeeded = Math.max(1, paddingNeeded);
+		formattedLines.push(`${indentStr}${detail.account}${' '.repeat(paddingNeeded)}${amount}`);
 	}
-	
+
 	return formattedLines;
+}
+
+interface PostingDetail {
+	trimmed: string;
+	account: string | null;
+	amount: string | null;
+}
+
+function extractPostingDetail(line: string): PostingDetail {
+	const trimmed = line.trim();
+	if (!trimmed) {
+		return { trimmed, account: null, amount: null };
+	}
+
+	const accountAmountSeparator = /\s{2,}|\t+/;
+	const parts = trimmed.split(accountAmountSeparator);
+
+	if (parts.length >= 2) {
+		return {
+			trimmed,
+			account: parts[0].trim(),
+			amount: parts.slice(1).join(' ').trim()
+		};
+	}
+
+	const fallbackMatch = trimmed.match(/^(\S+(?:\s+\S+)*?)(?:\s*)(\$-?\d+(?:,\d+)*(?:\.\d+)?|\-\$\d+(?:,\d+)*(?:\.\d+)?|\d+(?:,\d+)*(?:\.\d+)?)(.*)$/);
+	if (fallbackMatch) {
+		const account = fallbackMatch[1].trim();
+		const numericPart = fallbackMatch[2].trim();
+		const rest = fallbackMatch[3] ?? '';
+		const amount = `${numericPart}${rest}`.trim();
+		return { trimmed, account, amount };
+	}
+
+	return { trimmed, account: trimmed, amount: null };
+}
+
+function formatAmountWithStyle(amount: string | null, style: NegativeCommodityStyle): { formatted: string | null; hasLeadingNegativeCurrency: boolean } {
+	if (!amount) {
+		return { formatted: null, hasLeadingNegativeCurrency: false };
+	}
+
+	let formatted = amount;
+	if (style === 'signBeforeSymbol') {
+		const symbolLeadingRegex = /^(\$|€|£|¥)-(\d+(?:,\d+)*(?:\.\d+)?)(.*)$/;
+		formatted = formatted.replace(symbolLeadingRegex, '-$1$2$3');
+	} else {
+		const signLeadingRegex = /^-(\$|€|£|¥)(\d+(?:,\d+)*(?:\.\d+)?)(.*)$/;
+		formatted = formatted.replace(signLeadingRegex, '$1-$2$3');
+	}
+
+	const trimmed = formatted.trim();
+	const hasLeadingNegativeCurrency = /^-(\$|€|£|¥)/.test(trimmed);
+
+	return { formatted, hasLeadingNegativeCurrency };
 }
 
 /**
@@ -729,5 +800,3 @@ export function toggleCommentLines(text: string, startLine: number, endLine: num
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
-
-

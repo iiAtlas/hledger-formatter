@@ -425,6 +425,103 @@ suite('Hledger Formatter Tests', () => {
 		}
 	});
 
+	test('Respects negative commodity style configuration', () => {
+		const testInput = `2025-04-01 Example
+  Assets:Cash                $150.00
+  Income:Salary             -$150.00`;
+
+		const formatted = formatHledgerJournal(testInput, { negativeCommodityStyle: 'symbolBeforeSign' });
+		const lines = formatted.split('\n');
+		const incomeLine = lines.find(line => line.includes('Income:Salary'));
+		assert.ok(incomeLine, 'Income line should be present');
+		assert.ok(incomeLine?.includes('$-150.00'), 'Negative commodity should render as $- when configured');
+		assert.ok(!incomeLine?.includes('-$150.00'), 'Configured style should not emit -$ notation');
+	});
+
+	test('Aligns amounts by widest account when configured', () => {
+		const testInput = `2025-05-01 Mixed accounts
+  Assets:Very:Long:Account Name          $123.45
+  Equity:Opening                        -$123.45
+
+2025-05-02 Short accounts
+  A:B                                    $5.00
+  C:D                                  -$5.00`;
+
+		const fixed = formatHledgerJournal(testInput);
+		const widest = formatHledgerJournal(testInput, { amountAlignment: 'widest' });
+
+		const fixedGroups = collectAmountColumnsByTransaction(fixed);
+		const widestGroups = collectAmountColumnsByTransaction(widest);
+		assert.strictEqual(widestGroups.length, fixedGroups.length, 'Widest alignment should preserve transaction structure');
+
+		let observedImprovement = false;
+		for (let i = 0; i < widestGroups.length; i++) {
+			const widestGroup = widestGroups[i];
+			const fixedGroup = fixedGroups[i];
+
+			if (widestGroup.length === 0) {
+				continue;
+			}
+
+			const uniqueColumns = new Set(widestGroup);
+			assert.strictEqual(uniqueColumns.size, 1, 'Each transaction should have a single amount column when using widest alignment');
+
+			const widestColumn = widestGroup[0];
+			const fixedColumn = fixedGroup.length > 0 ? fixedGroup[0] : widestColumn;
+			if (widestColumn < fixedColumn) {
+				observedImprovement = true;
+			}
+			assert.ok(widestColumn <= fixedColumn, 'Widest alignment should not push amounts further right than the fixed column strategy');
+		}
+
+		assert.ok(observedImprovement, 'At least one transaction should move amounts closer when using widest alignment');
+	});
+
+	function collectAmountColumnsByTransaction(text: string): number[][] {
+		const result: number[][] = [];
+		let current: number[] = [];
+		const lines = text.split('\n');
+		for (const rawLine of lines) {
+			const line = rawLine.trimRight();
+			if (!line) {
+				if (current.length) {
+					result.push(current);
+					current = [];
+				}
+				continue;
+			}
+			if (/^\d{4}[-/]\d{2}[-/]\d{2}/.test(line)) {
+				if (current.length) {
+					result.push(current);
+					current = [];
+				}
+				continue;
+			}
+			if (line.trim().startsWith(';')) {
+				continue;
+			}
+			if (line.includes('$')) {
+				current.push(line.indexOf('$'));
+			}
+		}
+		if (current.length) {
+			result.push(current);
+		}
+		return result;
+	}
+
+	test('Uses configured indentation width', () => {
+		const testInput = `2025-06-01 Indentation test
+  Assets:Cash                $75.00
+  Income:Misc               -$75.00`;
+
+		const formatted = formatHledgerJournal(testInput, { indentationWidth: 4 });
+		const postingLines = formatted.split('\n').filter(line => line.trim().startsWith('Assets') || line.trim().startsWith('Income'));
+		for (const line of postingLines) {
+			assert.ok(line.startsWith('    '), 'Posting lines should start with four spaces when configured');
+		}
+	});
+
 	test('Sort preserves comments at beginning', () => {
 		const testInput = `; File header comment
 ; This should stay at the top
