@@ -135,6 +135,21 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(lines[0], '2025/03/01 Sample transaction');
 		assert.strictEqual(lines[4], '2025/03/02 Another one');
 	});
+
+	test('Format dates to dotted style', () => {
+		const original = `2025-03-01 One
+  Assets:Cash $10.00
+  Income:Misc -$10.00
+
+2025/03/02 Two
+  Assets:Cash $5.00
+  Income:Misc -$5.00`;
+
+		const formatted = formatHledgerJournal(original, { dateFormat: 'YYYY.MM.DD' });
+		const lines = formatted.split('\n');
+		assert.strictEqual(lines[0], '2025.03.01 One');
+		assert.strictEqual(lines[4], '2025.03.02 Two');
+	});
 	
 	test('Correct alignment of negative amounts', () => {
 		// Read input and expected output files
