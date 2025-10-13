@@ -6,6 +6,9 @@ A VS Code extension to make editing hledger journal files a bit more fun.
 
 [HLedger](https://hledger.org/) is an awesome plain text cli accounting tool. This extension adds syntax highlighting, formatting, sorting, and other quality-of-life improvements to make editing these files easier.
 
+![GitHub Release](https://img.shields.io/github/v/release/iiatlas/hledger-formatter) ![GitHub License](https://img.shields.io/github/license/iiatlas/hledger-formatter) ![Static Badge](https://img.shields.io/badge/VS%20Code-Ready-2BABF3) ![Static Badge](https://img.shields.io/badge/Open%20VSX-Ready-A60EE5) 
+
+
 ## Features
 
 - Automatically aligns account names and amounts in hledger journal files
