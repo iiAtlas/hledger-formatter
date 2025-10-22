@@ -987,7 +987,7 @@ class HledgerAccountCompletionProvider implements vscode.CompletionItemProvider 
 
 		// Read configuration for default account categories
 		const config = vscode.workspace.getConfiguration('hledger-formatter');
-		const defaultCategoriesConfig = config.get<string>('defaultAccountCategories', 'mixedCase');
+		const defaultCategoriesConfig = config.get<string>('defaultAccountCategories', 'lowercase');
 
 		// Add standard accounts based on configuration
 		if (defaultCategoriesConfig !== 'none') {
@@ -1020,7 +1020,7 @@ class HledgerAccountCompletionProvider implements vscode.CompletionItemProvider 
 				return accounts.map(a => a.toLowerCase());
 			case 'uppercase':
 				return accounts.map(a => a.toUpperCase());
-			case 'mixedCase':
+			case 'capitalize':
 				return accounts.map(a => a.charAt(0).toUpperCase() + a.slice(1).toLowerCase());
 			default:
 				return accounts;
