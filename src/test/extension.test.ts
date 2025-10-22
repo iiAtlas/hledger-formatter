@@ -1038,6 +1038,40 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(result, null, 'Should return null when multiple postings are missing amounts');
 	});
 
+	test('calculateBalancingAmount - respects existing spacing in transaction', () => {
+		const transaction = {
+			headerLine: 0,
+			lines: [
+				'2025-10-21 * Apple Developer Program',
+				'    expenses:software:developerfees        $104.45',
+				'    equity:owner:contributions             -$104.45',
+				'    assets:cash        '
+			]
+		};
+
+		const expectedDigitsColumn = Math.max(
+			transaction.lines[1].search(/\d/),
+			transaction.lines[2].search(/\d/)
+		);
+
+		const result = calculateBalancingAmount(transaction, {
+			amountColumnPosition: 42,
+			amountAlignment: 'widest',
+			indentationWidth: 4,
+			negativeCommodityStyle: 'symbolBeforeSign',
+			dateFormat: 'YYYY-MM-DD',
+			commentCharacter: ';'
+		}, 'assets:cash', {
+			currentLineText: transaction.lines[3],
+			cursorColumn: transaction.lines[3].length
+		});
+
+		assert.ok(result, 'Should calculate balancing amount when respecting spacing');
+		const completedLine = `${transaction.lines[3]}${result}`;
+		const resultDigitsColumn = completedLine.search(/\d/);
+		assert.strictEqual(resultDigitsColumn, expectedDigitsColumn, 'Digits should align with existing postings');
+	});
+
 	test('calculateBalancingAmount - returns null when all postings have amounts', () => {
 		const transaction = {
 			headerLine: 0,

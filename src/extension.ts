@@ -1314,6 +1314,11 @@ class HledgerBalancingAmountProvider implements vscode.InlineCompletionItemProvi
 			return undefined;
 		}
 
+		// Skip transaction header lines even if user temporarily indents them
+		if (isTransactionHeaderLine(trimmed)) {
+			return undefined;
+		}
+
 		// Don't suggest if line is a comment
 		if (trimmed.startsWith(';')) {
 			return undefined;
@@ -1342,7 +1347,10 @@ class HledgerBalancingAmountProvider implements vscode.InlineCompletionItemProvi
 		const formatterOptions = getFormatterOptionsFromConfiguration(config);
 
 		// Calculate balancing amount with proper spacing
-		const balancingAmount = calculateBalancingAmount(transaction, formatterOptions, detail.account);
+		const balancingAmount = calculateBalancingAmount(transaction, formatterOptions, detail.account, {
+			currentLineText: lineText,
+			cursorColumn: position.character
+		});
 		if (!balancingAmount) {
 			return undefined;
 		}
@@ -1416,10 +1424,12 @@ function parseCurrentTransaction(document: vscode.TextDocument, currentLine: num
 export function calculateBalancingAmount(
 	transaction: { headerLine: number; lines: string[] },
 	options: FormatterOptions,
-	currentLineAccountName: string
+	currentLineAccountName: string,
+	context?: { currentLineText?: string; cursorColumn?: number }
 ): string | null {
 	const postingLines = transaction.lines.slice(1); // Skip header
 	const indentWidth = Math.max(0, options.indentationWidth);
+	const currentLineText = context?.currentLineText ?? '';
 
 	// Parse all postings
 	const postings: Array<{
@@ -1505,44 +1515,94 @@ export function calculateBalancingAmount(
 	// This mirrors the logic in formatTransaction()
 	const digitsPrefixLength = getDigitsPrefixLength(formattedAmount);
 
+	const currentIndentLength = currentLineText
+		? getLeadingWhitespaceLength(currentLineText)
+		: indentWidth;
+	const accountEndColumn = currentLineText
+		? findAccountEndColumn(currentLineText, currentLineAccountName, currentIndentLength)
+		: currentIndentLength + currentLineAccountName.length;
+	const cursorColumn = context?.cursorColumn ?? accountEndColumn;
+	const minimumDigitsColumn = accountEndColumn + 2 + digitsPrefixLength;
+	const cursorDigitsColumn = Math.max(minimumDigitsColumn, cursorColumn + digitsPrefixLength);
+
 	let baseDigitsColumn: number;
 	if (options.amountAlignment === 'widest') {
 		// Calculate max column position from existing amounts
 		const postingsWithAmounts = postings.filter(p => p.hasAmount && p.account);
-		const digitColumnCandidates = postingsWithAmounts.map(p => {
-			const posting = p as { account: string; line: string };
-			const detail = extractPostingDetail(posting.line);
-			if (detail.amount) {
+		const digitColumnCandidates = postingsWithAmounts
+			.map(p => {
+				const posting = p as { account: string; line: string };
+				const detail = extractPostingDetail(posting.line);
+				if (!detail.amount) {
+					return null;
+				}
+
+				const postingIndentLength = getLeadingWhitespaceLength(posting.line);
+				const accountEnd = findAccountEndColumn(posting.line, posting.account, postingIndentLength);
+				const existingDigitsColumn = findDigitsColumnInLine(posting.line, accountEnd);
+
+				if (existingDigitsColumn !== null) {
+					return existingDigitsColumn;
+				}
+
 				const { formatted } = formatAmountWithStyle(detail.amount, options.negativeCommodityStyle);
 				const postingDigitsPrefix = formatted ? getDigitsPrefixLength(formatted.trim()) : 0;
-				return indentWidth + posting.account.length + postingDigitsPrefix + 2;
-			}
-			return indentWidth + posting.account.length + 2;
-		});
-
-		// Also consider the current line's account
-		const currentLineColumn = indentWidth + currentLineAccountName.length + digitsPrefixLength + 2;
+				return postingIndentLength + posting.account.length + postingDigitsPrefix + 2;
+			})
+			.filter((value): value is number => value !== null);
 
 		// Get the widest account length as fallback
 		const referenceAccountLength = Math.max(
 			...postings.map(p => p.account?.length || 0),
 			currentLineAccountName.length
 		);
-		const fallbackColumn = indentWidth + referenceAccountLength + 2;
+		const fallbackIndent = currentLineText ? currentIndentLength : indentWidth;
+		const fallbackColumn = fallbackIndent + referenceAccountLength + digitsPrefixLength + 2;
 
 		baseDigitsColumn = digitColumnCandidates.length > 0
-			? Math.max(fallbackColumn, currentLineColumn, ...digitColumnCandidates)
-			: Math.max(fallbackColumn, currentLineColumn);
+			? Math.max(fallbackColumn, cursorDigitsColumn, ...digitColumnCandidates)
+			: Math.max(fallbackColumn, cursorDigitsColumn);
 	} else {
 		// Fixed column mode
-		baseDigitsColumn = options.amountColumnPosition;
+		const cursorDigitsColumnFixed = Math.max(
+			minimumDigitsColumn,
+			cursorColumn + digitsPrefixLength
+		);
+		baseDigitsColumn = Math.max(options.amountColumnPosition, cursorDigitsColumnFixed);
 	}
 
-	// Calculate padding needed
-	const paddingTarget = baseDigitsColumn - (indentWidth + currentLineAccountName.length) - digitsPrefixLength;
-	const paddingNeeded = Math.max(2, paddingTarget);
+	// Calculate padding needed (only add additional spaces beyond what already exists)
+	const existingSpacing = Math.max(0, cursorColumn - accountEndColumn);
+	const basePadding = Math.max(2, baseDigitsColumn - accountEndColumn - digitsPrefixLength);
+	const paddingNeeded = Math.max(0, basePadding - existingSpacing);
 
 	return ' '.repeat(paddingNeeded) + formattedAmount;
+}
+
+function getLeadingWhitespaceLength(value: string): number {
+	return value.length - value.trimStart().length;
+}
+
+function findAccountEndColumn(line: string, account: string, indentLength: number): number {
+	const accountIndex = line.indexOf(account, indentLength);
+	if (accountIndex !== -1) {
+		return accountIndex + account.length;
+	}
+	return indentLength + account.length;
+}
+
+function findDigitsColumnInLine(line: string, startIndex: number): number | null {
+	for (let i = startIndex; i < line.length; i++) {
+		const char = line[i];
+		if (char === ';') {
+			break;
+		}
+		const code = line.charCodeAt(i);
+		if (code >= 48 && code <= 57) {
+			return i;
+		}
+	}
+	return null;
 }
 
 /**
