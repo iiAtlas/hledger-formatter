@@ -1550,6 +1550,11 @@ export function calculateBalancingAmount(
 	const [currency, sum] = Array.from(amountsByCurrency.entries())[0];
 	const balancingValue = -sum;
 
+	// If the transaction already balances, don't suggest an amount
+	if (Math.abs(balancingValue) < 1e-8) {
+		return null;
+	}
+
 	// Format the amount
 	const formattedAmount = formatAmountValue(balancingValue, currency, options.negativeCommodityStyle);
 

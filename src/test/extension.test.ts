@@ -1044,7 +1044,7 @@ suite('Hledger Formatter Tests', () => {
 			lines: [
 				'2025-10-21 * Apple Developer Program',
 				'    expenses:software:developerfees        $104.45',
-				'    equity:owner:contributions             -$104.45',
+				'    equity:owner:contributions             -$50.00',
 				'    assets:cash        '
 			]
 		};
@@ -1123,6 +1123,32 @@ suite('Hledger Formatter Tests', () => {
 		});
 
 		assert.strictEqual(result, null, 'Should not suggest balancing amount for metadata placeholder line');
+	});
+
+	test('calculateBalancingAmount - already balanced transaction does not suggest zero', () => {
+		const transaction = {
+			headerLine: 0,
+			lines: [
+				'2025-09-23 * Plaud Note - Silver',
+				'    expenses:equipment:accessories    $168.00',
+				'    equity:owner:contributions      -$168.00',
+				'    expenses:professional'
+			]
+		};
+
+		const result = calculateBalancingAmount(transaction, {
+			amountColumnPosition: 42,
+			amountAlignment: 'widest',
+			indentationWidth: 4,
+			negativeCommodityStyle: 'symbolBeforeSign',
+			dateFormat: 'YYYY-MM-DD',
+			commentCharacter: ';'
+		}, 'expenses:professional', {
+			currentLineText: transaction.lines[3],
+			cursorColumn: transaction.lines[3].length
+		});
+
+		assert.strictEqual(result, null, 'Should not suggest $0.00 when postings already balance');
 	});
 
 	test('calculateBalancingAmount - returns null when all postings have amounts', () => {
