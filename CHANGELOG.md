@@ -2,6 +2,23 @@
 
 All notable changes to the "hledger-formatter" extension will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Added balencing suggestions
+  - Appears automatically when cursor is on a posting line without an amount
+  - Calculates the exact amount needed based on other postings in the transaction
+  - Respects all formatting settings (alignment, negative commodity style, indentation)
+  - Accept suggestions with Tab key for fast data entry
+  - Only suggests when exactly one posting is missing an amount (unambiguous)
+  - Configurable via `hledger-formatter.suggestBalancingAmounts` setting (default: enabled)
+- Added autocomplete suggestions
+  - Includes standard hledger account categories (assets, liabilities, equity, revenues, income, expenses)
+  - Automatically discovers accounts from all journal files in workspace (including `!include` directives)
+  - Case-insensitive deduplication of standard categories with user accounts
+  - Configurable casing for standard categories via `hledger-formatter.defaultAccountCategories` setting
+  - Hierarchical account completion with colon (`:`) trigger character
+
 ## [1.0.5]
 
 This update works to bring the extension defaults closer to HLedger’s, including date formats, spacing, and handling of the negative commodity sign.
