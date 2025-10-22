@@ -51,27 +51,54 @@ suite('Hledger Formatter Tests', () => {
 		// Read input and expected output files
 		const inputJournal = readTestFile('inconsistent_indents_in.journal');
 		const expectedOutput = readTestFile('inconsistent_indents_out.journal');
-		
+
 		// Format the input journal
 		const formattedJournal = formatHledgerJournal(inputJournal);
-		
+
 		// Normalize both texts to handle line endings and whitespace
 		const normalizedFormatted = normalizeText(formattedJournal);
 		const normalizedExpected = normalizeText(expectedOutput);
-		
+
 		// Verify the formatting matches the expected output
-		assert.strictEqual(normalizedFormatted, normalizedExpected, 
+		assert.strictEqual(normalizedFormatted, normalizedExpected,
 			'Formatted output with inconsistent indentation should match expected output');
-		
+
 		// Verify indentation correction
 		const correctIndentation = verifyIndentation(formattedJournal);
-		assert.strictEqual(correctIndentation, true, 
+		assert.strictEqual(correctIndentation, true,
 			'All posting lines should have exactly 2 spaces of indentation');
-		
+
 		// Verify decimal point alignment
 		const decimalPointsAligned = verifyDecimalPointsAligned(formattedJournal);
-		assert.strictEqual(decimalPointsAligned, true, 
+		assert.strictEqual(decimalPointsAligned, true,
 			'Decimal points should be aligned in each transaction');
+	});
+
+	test('Format transaction headers with leading spaces', () => {
+		// Read input and expected output files
+		const inputJournal = readTestFile('header_indented_in.journal');
+		const expectedOutput = readTestFile('header_indented_out.journal');
+
+		// Format the input journal
+		const formattedJournal = formatHledgerJournal(inputJournal);
+
+		// Normalize both texts to handle line endings and whitespace
+		const normalizedFormatted = normalizeText(formattedJournal);
+		const normalizedExpected = normalizeText(expectedOutput);
+
+		// Verify the formatting matches the expected output
+		assert.strictEqual(normalizedFormatted, normalizedExpected,
+			'Transaction headers should not have leading spaces');
+
+		// Verify transaction headers start at column 0
+		const lines = formattedJournal.split('\n');
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
+			if (/^\d{4}[-/]\d{2}[-/]\d{2}/.test(line)) {
+				assert.ok(!line.startsWith(' '),
+					`Transaction header at line ${i+1} should not have leading spaces: "${line}"`);
+			}
+		}
 	});
 	
 	test('Format sample journal with negative amounts', () => {
