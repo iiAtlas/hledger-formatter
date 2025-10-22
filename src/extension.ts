@@ -946,14 +946,14 @@ export function toggleCommentLines(text: string, startLine: number, endLine: num
  * Completion provider for hledger account names
  */
 class HledgerAccountCompletionProvider implements vscode.CompletionItemProvider {
-	// Standard hledger top-level account categories (conventions)
-	private readonly standardAccounts = [
-		'Assets',
-		'Liabilities',
-		'Equity',
-		'Revenues',
-		'Income',
-		'Expenses'
+	// Standard hledger top-level account categories (base forms in lowercase)
+	private readonly standardAccountsBase = [
+		'assets',
+		'liabilities',
+		'equity',
+		'revenues',
+		'income',
+		'expenses'
 	];
 
 	private accountCache: Set<string> = new Set();
@@ -985,12 +985,19 @@ class HledgerAccountCompletionProvider implements vscode.CompletionItemProvider 
 		// Build completion items
 		const completionItems: vscode.CompletionItem[] = [];
 
-		// Add standard accounts
-		for (const account of this.standardAccounts) {
-			const item = new vscode.CompletionItem(account, vscode.CompletionItemKind.Field);
-			item.detail = 'Standard account category';
-			item.sortText = `0_${account}`; // Sort standard accounts first
-			completionItems.push(item);
+		// Read configuration for default account categories
+		const config = vscode.workspace.getConfiguration('hledger-formatter');
+		const defaultCategoriesConfig = config.get<string>('defaultAccountCategories', 'mixedCase');
+
+		// Add standard accounts based on configuration
+		if (defaultCategoriesConfig !== 'none') {
+			const standardAccounts = this.applyAccountCasing(this.standardAccountsBase, defaultCategoriesConfig);
+			for (const account of standardAccounts) {
+				const item = new vscode.CompletionItem(account, vscode.CompletionItemKind.Field);
+				item.detail = 'Standard account category';
+				item.sortText = `0_${account}`; // Sort standard accounts first
+				completionItems.push(item);
+			}
 		}
 
 		// Add accounts from cache
@@ -1002,6 +1009,22 @@ class HledgerAccountCompletionProvider implements vscode.CompletionItemProvider 
 		}
 
 		return completionItems;
+	}
+
+	/**
+	 * Applies casing to account names based on configuration
+	 */
+	private applyAccountCasing(accounts: string[], casing: string): string[] {
+		switch (casing) {
+			case 'lowercase':
+				return accounts.map(a => a.toLowerCase());
+			case 'uppercase':
+				return accounts.map(a => a.toUpperCase());
+			case 'mixedCase':
+				return accounts.map(a => a.charAt(0).toUpperCase() + a.slice(1).toLowerCase());
+			default:
+				return accounts;
+		}
 	}
 
 	/**
