@@ -1,0 +1,10 @@
+; Test file with indented transaction headers (issue reported by user)
+
+  2025-09-02 * Stripe payout
+  ; Stripe ACH deposit
+  assets:checking $100.00
+  income:stripe -$100.00
+
+  2025-09-05 * Another transaction
+    expenses:software  $50.00
+    assets:checking   -$50.00

@@ -690,7 +690,6 @@ function formatTransactionHeader(headerLine: string, options: FormatterOptions):
 	const commentIndex = headerLine.search(commentRegex);
 	const commentPart = commentIndex !== -1 ? headerLine.slice(commentIndex) : '';
 	const headerWithoutComment = commentIndex !== -1 ? headerLine.slice(0, commentIndex) : headerLine;
-	const leadingWhitespace = headerWithoutComment.match(/^\s*/)?.[0] ?? '';
 	const trimmedHeader = headerWithoutComment.trim();
 	if (!trimmedHeader) {
 		return headerLine;
@@ -731,7 +730,8 @@ function formatTransactionHeader(headerLine: string, options: FormatterOptions):
 		segments.push(description);
 	}
 
-	const baseHeader = `${leadingWhitespace}${segments.join(' ')}`;
+	// Transaction headers should always start at column 0 (no leading whitespace)
+	const baseHeader = segments.join(' ');
 	if (!commentPart) {
 		return baseHeader;
 	}
