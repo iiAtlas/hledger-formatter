@@ -1072,6 +1072,59 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(resultDigitsColumn, expectedDigitsColumn, 'Digits should align with existing postings');
 	});
 
+	test('calculateBalancingAmount - ignores metadata lines when already balanced', () => {
+		const transaction = {
+			headerLine: 0,
+			lines: [
+				'2025-10-01 * Chrome Web Store developer registration fee',
+				'    expenses:software:developerfees    $5.00',
+				'    assets:bank:checking              -$5.00',
+				'    project: atlas-notes',
+				'    note: subscription renewal'
+			]
+		};
+
+		const result = calculateBalancingAmount(transaction, {
+			amountColumnPosition: 42,
+			amountAlignment: 'widest',
+			indentationWidth: 4,
+			negativeCommodityStyle: 'symbolBeforeSign',
+			dateFormat: 'YYYY-MM-DD',
+			commentCharacter: ';'
+		}, 'project: atlas-notes', {
+			currentLineText: transaction.lines[3],
+			cursorColumn: transaction.lines[3].length
+		});
+
+		assert.strictEqual(result, null, 'Should not suggest balancing amount when only metadata lines are missing amounts');
+	});
+
+	test('calculateBalancingAmount - ignores metadata placeholder without value', () => {
+		const transaction = {
+			headerLine: 0,
+			lines: [
+				'2025-09-29 * OpenAI API usage credit',
+				'    expenses:software:openai    $5.00',
+				'    equity:owner:contributions -$5.00',
+				'    project:'
+			]
+		};
+
+		const result = calculateBalancingAmount(transaction, {
+			amountColumnPosition: 42,
+			amountAlignment: 'widest',
+			indentationWidth: 4,
+			negativeCommodityStyle: 'symbolBeforeSign',
+			dateFormat: 'YYYY-MM-DD',
+			commentCharacter: ';'
+		}, 'project:', {
+			currentLineText: transaction.lines[3],
+			cursorColumn: transaction.lines[3].length
+		});
+
+		assert.strictEqual(result, null, 'Should not suggest balancing amount for metadata placeholder line');
+	});
+
 	test('calculateBalancingAmount - returns null when all postings have amounts', () => {
 		const transaction = {
 			headerLine: 0,

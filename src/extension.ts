@@ -86,6 +86,30 @@ function isCommentLine(line: string): boolean {
 	return trimmed.startsWith(';') || trimmed.startsWith('#') || trimmed.startsWith('*');
 }
 
+function isMetadataPostingLine(trimmedLine: string): boolean {
+	if (!trimmedLine) {
+		return false;
+	}
+
+	// Ignore actual postings which always separate account and amount with two spaces or tabs
+	if (/\s{2,}|\t/.test(trimmedLine)) {
+		return false;
+	}
+
+	// Treat key/value metadata (e.g., "project: xyz" or "note: something") as metadata.
+	// Matches keys made of word characters, dots, or hyphens, followed by a colon and optional value that
+	// either ends immediately or starts with single whitespace (no amount-style spacing).
+	return /^[A-Za-z0-9_.-]+:(\s+.*)?$/.test(trimmedLine);
+}
+
+function isMetadataPostingAccount(account: string | null | undefined): boolean {
+	if (!account) {
+		return false;
+	}
+	const trimmedAccount = account.trim();
+	return trimmedAccount.endsWith(':') || /:\s/.test(trimmedAccount);
+}
+
 /**
  * Checks if a line starts a comment block
  * @param line The line to check (should be trimmed)
@@ -1324,6 +1348,11 @@ class HledgerBalancingAmountProvider implements vscode.InlineCompletionItemProvi
 			return undefined;
 		}
 
+		// Don't suggest for metadata lines (e.g., project:, note:)
+		if (isMetadataPostingLine(trimmed)) {
+			return undefined;
+		}
+
 		// Don't suggest if line already has an amount
 		// Check if there's already two spaces or a tab followed by a potential amount
 		const hasAmount = /\s{2,}|\t/.test(trimmed) && /[\d$€£¥-]/.test(trimmed.split(/\s{2,}|\t/)[1] || '');
@@ -1334,6 +1363,10 @@ class HledgerBalancingAmountProvider implements vscode.InlineCompletionItemProvi
 		// Extract account name from current line
 		const detail = extractPostingDetail(lineText);
 		if (!detail.account) {
+			return undefined;
+		}
+
+		if (isMetadataPostingAccount(detail.account)) {
 			return undefined;
 		}
 
@@ -1444,13 +1477,22 @@ export function calculateBalancingAmount(
 		const trimmed = line.trim();
 
 		// Skip empty lines and comments
-		if (!trimmed || trimmed.startsWith(';')) {
+		if (!trimmed || isCommentLine(trimmed)) {
+			continue;
+		}
+
+		// Skip metadata lines (e.g., project:, note:)
+		if (isMetadataPostingLine(trimmed)) {
 			continue;
 		}
 
 		// Extract posting detail
 		const detail = extractPostingDetail(line);
 		if (!detail.account) {
+			continue;
+		}
+
+		if (isMetadataPostingAccount(detail.account)) {
 			continue;
 		}
 
