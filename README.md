@@ -16,6 +16,7 @@ A VS Code extension to make editing hledger journal files a bit more fun.
 - Balancing amount suggestions, press tab to automatically add the balanced amount (`$100 -> -$100`)
 - Rich syntax highlighting with hierarchical account coloring
 - Sort journal entries by date (`Shift+Cmd+S`)
+- Handles all supported comment styles (`;`, `#`, `*`, and `comment` blocks) for formatting and toggling
 - Format on save / Sort on save options (disabled by default)
 - Toggle comment lines (`Cmd+/`)
 - Create new monthly journal files (`Cmd+N`)
@@ -74,6 +75,7 @@ This extension contributes the following settings:
 * `hledger-formatter.indentationWidth`: Posting indentation width in spaces (default: 4)
 * `hledger-formatter.negativeCommodityStyle`: Render negatives as `-$` or `$-` (default: `$-`)
 * `hledger-formatter.dateFormat`: Preferred transaction date layout (`YYYY-MM-DD`, `YYYY/MM/DD`, `YYYY.MM.DD`)
+* `hledger-formatter.commentCharacter`: Default character used when toggling comments (`;`, `#`, or `*`; default: `;`)
 
 ### Autocomplete / Suggestions
 * `hledger-formatter.suggestBalancingAmounts`: Enable/disable inline ghost text suggestions for balancing amounts (default: true)
