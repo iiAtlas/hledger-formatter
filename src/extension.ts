@@ -1242,6 +1242,12 @@ class HledgerBalancingAmountProvider implements vscode.InlineCompletionItemProvi
 			return undefined;
 		}
 
+		// Extract account name from current line
+		const detail = extractPostingDetail(lineText);
+		if (!detail.account) {
+			return undefined;
+		}
+
 		// Parse the current transaction
 		const transaction = parseCurrentTransaction(document, position.line);
 		if (!transaction) {
@@ -1251,8 +1257,8 @@ class HledgerBalancingAmountProvider implements vscode.InlineCompletionItemProvi
 		// Get formatter options for amount formatting
 		const formatterOptions = getFormatterOptionsFromConfiguration(config);
 
-		// Calculate balancing amount
-		const balancingAmount = calculateBalancingAmount(transaction, formatterOptions);
+		// Calculate balancing amount with proper spacing
+		const balancingAmount = calculateBalancingAmount(transaction, formatterOptions, detail.account);
 		if (!balancingAmount) {
 			return undefined;
 		}
@@ -1320,13 +1326,16 @@ function parseCurrentTransaction(document: vscode.TextDocument, currentLine: num
  * Calculates the balancing amount for a transaction
  * @param transaction Transaction info with lines
  * @param options Formatter options for styling
- * @returns Formatted balancing amount or null if cannot calculate
+ * @param currentLineAccountName The account name on the current line (where suggestion will appear)
+ * @returns Formatted balancing amount with proper spacing or null if cannot calculate
  */
 export function calculateBalancingAmount(
 	transaction: { headerLine: number; lines: string[] },
-	options: FormatterOptions
+	options: FormatterOptions,
+	currentLineAccountName: string
 ): string | null {
 	const postingLines = transaction.lines.slice(1); // Skip header
+	const indentWidth = Math.max(0, options.indentationWidth);
 
 	// Parse all postings
 	const postings: Array<{
@@ -1334,6 +1343,7 @@ export function calculateBalancingAmount(
 		hasAmount: boolean;
 		amount: number | null;
 		currency: string | null;
+		account: string | null;
 	}> = [];
 
 	for (const line of postingLines) {
@@ -1358,14 +1368,16 @@ export function calculateBalancingAmount(
 					line,
 					hasAmount: true,
 					amount: parsed.value,
-					currency: parsed.currency
+					currency: parsed.currency,
+					account: detail.account
 				});
 			} else {
 				postings.push({
 					line,
 					hasAmount: false,
 					amount: null,
-					currency: null
+					currency: null,
+					account: detail.account
 				});
 			}
 		} else {
@@ -1373,7 +1385,8 @@ export function calculateBalancingAmount(
 				line,
 				hasAmount: false,
 				amount: null,
-				currency: null
+				currency: null,
+				account: detail.account
 			});
 		}
 	}
@@ -1404,8 +1417,48 @@ export function calculateBalancingAmount(
 	// Format the amount
 	const formattedAmount = formatAmountValue(balancingValue, currency, options.negativeCommodityStyle);
 
-	// Add spacing before the amount (at least 2 spaces)
-	return `  ${formattedAmount}`;
+	// Calculate proper spacing based on alignment settings
+	// This mirrors the logic in formatTransaction()
+	const digitsPrefixLength = getDigitsPrefixLength(formattedAmount);
+
+	let baseDigitsColumn: number;
+	if (options.amountAlignment === 'widest') {
+		// Calculate max column position from existing amounts
+		const postingsWithAmounts = postings.filter(p => p.hasAmount && p.account);
+		const digitColumnCandidates = postingsWithAmounts.map(p => {
+			const posting = p as { account: string; line: string };
+			const detail = extractPostingDetail(posting.line);
+			if (detail.amount) {
+				const { formatted } = formatAmountWithStyle(detail.amount, options.negativeCommodityStyle);
+				const postingDigitsPrefix = formatted ? getDigitsPrefixLength(formatted.trim()) : 0;
+				return indentWidth + posting.account.length + postingDigitsPrefix + 2;
+			}
+			return indentWidth + posting.account.length + 2;
+		});
+
+		// Also consider the current line's account
+		const currentLineColumn = indentWidth + currentLineAccountName.length + digitsPrefixLength + 2;
+
+		// Get the widest account length as fallback
+		const referenceAccountLength = Math.max(
+			...postings.map(p => p.account?.length || 0),
+			currentLineAccountName.length
+		);
+		const fallbackColumn = indentWidth + referenceAccountLength + 2;
+
+		baseDigitsColumn = digitColumnCandidates.length > 0
+			? Math.max(fallbackColumn, currentLineColumn, ...digitColumnCandidates)
+			: Math.max(fallbackColumn, currentLineColumn);
+	} else {
+		// Fixed column mode
+		baseDigitsColumn = options.amountColumnPosition;
+	}
+
+	// Calculate padding needed
+	const paddingTarget = baseDigitsColumn - (indentWidth + currentLineAccountName.length) - digitsPrefixLength;
+	const paddingNeeded = Math.max(2, paddingTarget);
+
+	return ' '.repeat(paddingNeeded) + formattedAmount;
 }
 
 /**
