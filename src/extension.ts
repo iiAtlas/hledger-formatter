@@ -989,6 +989,9 @@ class HledgerAccountCompletionProvider implements vscode.CompletionItemProvider 
 		const config = vscode.workspace.getConfiguration('hledger-formatter');
 		const defaultCategoriesConfig = config.get<string>('defaultAccountCategories', 'lowercase');
 
+		// Track standard accounts for case-insensitive deduplication
+		const standardAccountsLowercase = new Set<string>();
+
 		// Add standard accounts based on configuration
 		if (defaultCategoriesConfig !== 'none') {
 			const standardAccounts = this.applyAccountCasing(this.standardAccountsBase, defaultCategoriesConfig);
@@ -997,11 +1000,19 @@ class HledgerAccountCompletionProvider implements vscode.CompletionItemProvider 
 				item.detail = 'Standard account category';
 				item.sortText = `0_${account}`; // Sort standard accounts first
 				completionItems.push(item);
+
+				// Track lowercase version for deduplication
+				standardAccountsLowercase.add(account.toLowerCase());
 			}
 		}
 
-		// Add accounts from cache
+		// Add accounts from cache (skip duplicates of standard accounts)
 		for (const account of this.accountCache) {
+			// Skip if this account matches a standard account (case-insensitive)
+			if (standardAccountsLowercase.has(account.toLowerCase())) {
+				continue;
+			}
+
 			const item = new vscode.CompletionItem(account, vscode.CompletionItemKind.Field);
 			item.detail = 'Existing account';
 			item.sortText = `1_${account}`; // Sort existing accounts after standard ones
