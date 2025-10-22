@@ -932,7 +932,8 @@ suite('Hledger Formatter Tests', () => {
 			amountAlignment: 'widest',
 			indentationWidth: 4,
 			negativeCommodityStyle: 'symbolBeforeSign',
-			dateFormat: 'YYYY-MM-DD'
+			dateFormat: 'YYYY-MM-DD',
+			commentCharacter: ';'
 		}, 'assets:cash');
 
 		assert.ok(result, 'Should calculate balancing amount');
@@ -956,7 +957,8 @@ suite('Hledger Formatter Tests', () => {
 			amountAlignment: 'widest',
 			indentationWidth: 4,
 			negativeCommodityStyle: 'symbolBeforeSign',
-			dateFormat: 'YYYY-MM-DD'
+			dateFormat: 'YYYY-MM-DD',
+			commentCharacter: ';'
 		}, 'income:salary');
 
 		assert.ok(result, 'Should calculate negative balancing amount');
@@ -979,7 +981,8 @@ suite('Hledger Formatter Tests', () => {
 			amountAlignment: 'widest',
 			indentationWidth: 4,
 			negativeCommodityStyle: 'signBeforeSymbol',
-			dateFormat: 'YYYY-MM-DD'
+			dateFormat: 'YYYY-MM-DD',
+			commentCharacter: ';'
 		}, 'income:salary');
 
 		assert.ok(result, 'Should calculate with correct style');
@@ -1003,7 +1006,8 @@ suite('Hledger Formatter Tests', () => {
 			amountAlignment: 'widest',
 			indentationWidth: 4,
 			negativeCommodityStyle: 'symbolBeforeSign',
-			dateFormat: 'YYYY-MM-DD'
+			dateFormat: 'YYYY-MM-DD',
+			commentCharacter: ';'
 		}, 'assets:cash');
 
 		assert.ok(result, 'Should calculate for multi-posting transaction');
@@ -1027,7 +1031,8 @@ suite('Hledger Formatter Tests', () => {
 			amountAlignment: 'widest',
 			indentationWidth: 4,
 			negativeCommodityStyle: 'symbolBeforeSign',
-			dateFormat: 'YYYY-MM-DD'
+			dateFormat: 'YYYY-MM-DD',
+			commentCharacter: ';'
 		}, 'assets:cash');
 
 		assert.strictEqual(result, null, 'Should return null when multiple postings are missing amounts');
@@ -1048,7 +1053,8 @@ suite('Hledger Formatter Tests', () => {
 			amountAlignment: 'widest',
 			indentationWidth: 4,
 			negativeCommodityStyle: 'symbolBeforeSign',
-			dateFormat: 'YYYY-MM-DD'
+			dateFormat: 'YYYY-MM-DD',
+			commentCharacter: ';'
 		}, 'assets:cash');
 
 		assert.strictEqual(result, null, 'Should return null when all postings have amounts');
@@ -1069,7 +1075,8 @@ suite('Hledger Formatter Tests', () => {
 			amountAlignment: 'widest',
 			indentationWidth: 4,
 			negativeCommodityStyle: 'symbolBeforeSign',
-			dateFormat: 'YYYY-MM-DD'
+			dateFormat: 'YYYY-MM-DD',
+			commentCharacter: ';'
 		}, 'assets:cash');
 
 		assert.ok(result, 'Should handle Euro currency');
