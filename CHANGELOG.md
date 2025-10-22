@@ -19,6 +19,9 @@ All notable changes to the "hledger-formatter" extension will be documented in t
   - Configurable casing for standard categories via `hledger-formatter.defaultAccountCategories` setting
   - Hierarchical account completion with colon (`:`) trigger character
 
+### Fixed
+- Fixed format spacing on first row entries
+
 ## [1.0.5]
 
 This update works to bring the extension defaults closer to HLedger’s, including date formats, spacing, and handling of the negative commodity sign.
