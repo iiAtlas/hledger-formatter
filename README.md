@@ -12,6 +12,8 @@ A VS Code extension to make editing hledger journal files a bit more fun.
 ## Features
 
 - Automatically aligns account names and amounts in hledger journal files
+- Autocomplete suggestions based on your account types
+- Balancing amount suggestions, press tab to automatically add the balanced amount (`$100 -> -$100`)
 - Rich syntax highlighting with hierarchical account coloring
 - Sort journal entries by date (`Shift+Cmd+S`)
 - Format on save / Sort on save options (disabled by default)
@@ -36,6 +38,12 @@ Automatically sorts transactions chronologically:
 
 ![Sort Demo](images/sort-demo.gif)
 
+### Autocomplete / Balancing Suggestions
+Intelligent suggestions for both the standard categories and your own, and a suggestion for balancing amounts.  For more info see [AUTOCOMPLETE.md](AUTCOMPLETE.md).
+
+![Autocomplete Demo](images/autocomplete-demo.gif)
+
+
 ## Supported File Types
 
 - `.journal`
@@ -58,13 +66,18 @@ Automatically sorts transactions chronologically:
 
 This extension contributes the following settings:
 
+### Formatting
 * `hledger-formatter.formatOnSave`: Enable/disable formatting on save (default: false)
 * `hledger-formatter.sortOnSave`: Enable/disable sorting entries by date on save (default: false)
-* `hledger-formatter.amountColumnPosition`: Column position for aligning amounts (default: 42, range: 20-100)
+* `hledger-formatter.amountColumnPosition`: Column position for aligning amounts when using fixed column mode (default: 42, range: 20-100)
 * `hledger-formatter.amountAlignment`: Choose between a fixed column or per-transaction widest alignment (default: widest)
 * `hledger-formatter.indentationWidth`: Posting indentation width in spaces (default: 4)
 * `hledger-formatter.negativeCommodityStyle`: Render negatives as `-$` or `$-` (default: `$-`)
 * `hledger-formatter.dateFormat`: Preferred transaction date layout (`YYYY-MM-DD`, `YYYY/MM/DD`, `YYYY.MM.DD`)
+
+### Autocomplete / Suggestions
+* `hledger-formatter.suggestBalancingAmounts`: Enable/disable inline ghost text suggestions for balancing amounts (default: true)
+* `hledger-formatter.defaultAccountCategories`: Include standard account categories in autocomplete (options: none, lowercase, uppercase, capitalize; default: lowercase)
 
 ## Example
 

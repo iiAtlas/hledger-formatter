@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 type AmountAlignment = 'fixedColumn' | 'widest';
 type NegativeCommodityStyle = 'signBeforeSymbol' | 'symbolBeforeSign';
@@ -352,7 +353,28 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-	context.subscriptions.push(formatCommand, formatOnSaveDisposable, formatterProvider, rangeFormatterProvider, toggleCommentCommand, newFileCommand, sortCommand);
+	// Register account autocomplete provider
+	const accountCompletionProvider = vscode.languages.registerCompletionItemProvider(
+		[
+			{ scheme: 'file', pattern: '**/*.journal' },
+			{ scheme: 'file', pattern: '**/*.hledger' },
+			{ scheme: 'file', pattern: '**/*.ledger' }
+		],
+		new HledgerAccountCompletionProvider(),
+		':' // Trigger on colon for hierarchical accounts
+	);
+
+	// Register inline completion provider for balancing amounts
+	const balancingAmountProvider = vscode.languages.registerInlineCompletionItemProvider(
+		[
+			{ scheme: 'file', pattern: '**/*.journal' },
+			{ scheme: 'file', pattern: '**/*.hledger' },
+			{ scheme: 'file', pattern: '**/*.ledger' }
+		],
+		new HledgerBalancingAmountProvider()
+	);
+
+	context.subscriptions.push(formatCommand, formatOnSaveDisposable, formatterProvider, rangeFormatterProvider, toggleCommentCommand, newFileCommand, sortCommand, accountCompletionProvider, balancingAmountProvider);
 }
 
 /**
@@ -928,6 +950,591 @@ export function toggleCommentLines(text: string, startLine: number, endLine: num
 	}
 
 	return lines.join('\n');
+}
+
+/**
+ * Completion provider for hledger account names
+ */
+class HledgerAccountCompletionProvider implements vscode.CompletionItemProvider {
+	// Standard hledger top-level account categories (base forms in lowercase)
+	private readonly standardAccountsBase = [
+		'assets',
+		'liabilities',
+		'equity',
+		'revenues',
+		'income',
+		'expenses'
+	];
+
+	private accountCache: Set<string> = new Set();
+	private lastCacheUpdate: number = 0;
+	private readonly cacheExpiryMs = 5000; // Refresh cache every 5 seconds
+
+	async provideCompletionItems(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		token: vscode.CancellationToken,
+		context: vscode.CompletionContext
+	): Promise<vscode.CompletionItem[]> {
+		const linePrefix = document.lineAt(position).text.substring(0, position.character);
+
+		// Only provide completions for posting lines (lines that start with whitespace)
+		// or at the beginning of an account name
+		const isPostingLine = /^\s+/.test(linePrefix);
+		if (!isPostingLine) {
+			return [];
+		}
+
+		// Update account cache if needed
+		await this.updateAccountCache();
+
+		// Get the current word being typed
+		const wordRange = document.getWordRangeAtPosition(position, /[\w:]+/);
+		const currentWord = wordRange ? document.getText(wordRange) : '';
+
+		// Build completion items
+		const completionItems: vscode.CompletionItem[] = [];
+
+		// Read configuration for default account categories
+		const config = vscode.workspace.getConfiguration('hledger-formatter');
+		const defaultCategoriesConfig = config.get<string>('defaultAccountCategories', 'lowercase');
+
+		// Track standard accounts for case-insensitive deduplication
+		const standardAccountsLowercase = new Set<string>();
+
+		// Add standard accounts based on configuration
+		if (defaultCategoriesConfig !== 'none') {
+			const standardAccounts = this.applyAccountCasing(this.standardAccountsBase, defaultCategoriesConfig);
+			for (const account of standardAccounts) {
+				const item = new vscode.CompletionItem(account, vscode.CompletionItemKind.Field);
+				item.detail = 'Standard account category';
+				item.sortText = `0_${account}`; // Sort standard accounts first
+				completionItems.push(item);
+
+				// Track lowercase version for deduplication
+				standardAccountsLowercase.add(account.toLowerCase());
+			}
+		}
+
+		// Add accounts from cache (skip duplicates of standard accounts)
+		for (const account of this.accountCache) {
+			// Skip if this account matches a standard account (case-insensitive)
+			if (standardAccountsLowercase.has(account.toLowerCase())) {
+				continue;
+			}
+
+			const item = new vscode.CompletionItem(account, vscode.CompletionItemKind.Field);
+			item.detail = 'Existing account';
+			item.sortText = `1_${account}`; // Sort existing accounts after standard ones
+			completionItems.push(item);
+		}
+
+		return completionItems;
+	}
+
+	/**
+	 * Applies casing to account names based on configuration
+	 */
+	private applyAccountCasing(accounts: string[], casing: string): string[] {
+		switch (casing) {
+			case 'lowercase':
+				return accounts.map(a => a.toLowerCase());
+			case 'uppercase':
+				return accounts.map(a => a.toUpperCase());
+			case 'capitalize':
+				return accounts.map(a => a.charAt(0).toUpperCase() + a.slice(1).toLowerCase());
+			default:
+				return accounts;
+		}
+	}
+
+	/**
+	 * Updates the account cache by scanning all journal files in the workspace
+	 */
+	private async updateAccountCache(): Promise<void> {
+		const now = Date.now();
+		if (now - this.lastCacheUpdate < this.cacheExpiryMs) {
+			return; // Cache is still fresh
+		}
+
+		this.accountCache.clear();
+		this.lastCacheUpdate = now;
+
+		// Find all journal files in the workspace
+		const journalFiles = await vscode.workspace.findFiles(
+			'**/*.{journal,hledger,ledger}',
+			'**/node_modules/**',
+			1000 // Limit to 1000 files
+		);
+
+		// Track visited files to avoid circular includes
+		const visitedFiles = new Set<string>();
+
+		// Extract accounts from each file (including included files)
+		for (const fileUri of journalFiles) {
+			try {
+				await this.processJournalFile(fileUri, visitedFiles);
+			} catch (error) {
+				// Skip files that can't be read
+				console.error(`Failed to read file ${fileUri.fsPath}:`, error);
+			}
+		}
+	}
+
+	/**
+	 * Processes a journal file and its includes recursively
+	 */
+	private async processJournalFile(fileUri: vscode.Uri, visitedFiles: Set<string>): Promise<void> {
+		const filePath = fileUri.fsPath;
+
+		// Avoid circular includes
+		if (visitedFiles.has(filePath)) {
+			return;
+		}
+		visitedFiles.add(filePath);
+
+		try {
+			const document = await vscode.workspace.openTextDocument(fileUri);
+			const text = document.getText();
+
+			// Extract accounts from this file
+			const accounts = this.extractAccountsFromDocument(text);
+			accounts.forEach(account => this.accountCache.add(account));
+
+			// Extract and process included files
+			const includedFiles = this.extractIncludedFiles(text, fileUri);
+			for (const includedUri of includedFiles) {
+				await this.processJournalFile(includedUri, visitedFiles);
+			}
+		} catch (error) {
+			// Skip files that can't be read
+			console.error(`Failed to process file ${filePath}:`, error);
+		}
+	}
+
+	/**
+	 * Extracts included file paths from journal text
+	 */
+	private extractIncludedFiles(text: string, parentFileUri: vscode.Uri): vscode.Uri[] {
+		const includedFiles: vscode.Uri[] = [];
+		const lines = text.split('\n');
+
+		for (const line of lines) {
+			const trimmed = line.trim();
+
+			// Match include directives: "!include path" or "include path"
+			const includeMatch = trimmed.match(/^!?include\s+(.+)$/);
+			if (includeMatch) {
+				const includePath = includeMatch[1].trim();
+
+				try {
+					// Resolve path relative to parent file
+					const parentDir = vscode.Uri.joinPath(parentFileUri, '..');
+					const resolvedUri = vscode.Uri.joinPath(parentDir, includePath);
+					includedFiles.push(resolvedUri);
+				} catch (error) {
+					console.error(`Failed to resolve include path: ${includePath}`, error);
+				}
+			}
+		}
+
+		return includedFiles;
+	}
+
+	/**
+	 * Extracts account names from journal text
+	 */
+	private extractAccountsFromDocument(text: string): Set<string> {
+		const accounts = new Set<string>();
+		const lines = text.split('\n');
+
+		for (const line of lines) {
+			const trimmed = line.trim();
+
+			// Skip empty lines and comments
+			if (!trimmed || trimmed.startsWith(';')) {
+				continue;
+			}
+
+			// Skip transaction header lines (lines that start with a date)
+			if (/^\d{4}[/-]\d{2}[/-]\d{2}/.test(trimmed)) {
+				continue;
+			}
+
+			// Check if this is a posting line (starts with whitespace)
+			if (!/^\s+/.test(line)) {
+				continue;
+			}
+
+			// Extract account name (everything before two or more spaces, or before tab)
+			const match = trimmed.match(/^([^\s]+(?:\s+[^\s]+)*?)(?:\s{2,}|\t)/);
+			if (match) {
+				const account = match[1].trim();
+				if (account && !account.startsWith(';')) {
+					accounts.add(account);
+
+					// Also add parent accounts for hierarchical completions
+					const parts = account.split(':');
+					for (let i = 1; i < parts.length; i++) {
+						const parentAccount = parts.slice(0, i).join(':');
+						accounts.add(parentAccount);
+					}
+				}
+			} else {
+				// Line might be an account without an amount
+				const accountOnly = trimmed.match(/^([^\s;]+(?::[^\s;]+)*)/);
+				if (accountOnly) {
+					const account = accountOnly[1].trim();
+					if (account) {
+						accounts.add(account);
+
+						// Also add parent accounts
+						const parts = account.split(':');
+						for (let i = 1; i < parts.length; i++) {
+							const parentAccount = parts.slice(0, i).join(':');
+							accounts.add(parentAccount);
+						}
+					}
+				}
+			}
+		}
+
+		return accounts;
+	}
+}
+
+/**
+ * Inline completion provider for balancing amounts
+ */
+class HledgerBalancingAmountProvider implements vscode.InlineCompletionItemProvider {
+	async provideInlineCompletionItems(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		context: vscode.InlineCompletionContext,
+		token: vscode.CancellationToken
+	): Promise<vscode.InlineCompletionItem[] | undefined> {
+		// Check if feature is enabled
+		const config = vscode.workspace.getConfiguration('hledger-formatter');
+		const enabled = config.get<boolean>('suggestBalancingAmounts', true);
+		if (!enabled) {
+			return undefined;
+		}
+
+		// Get the current line
+		const currentLine = document.lineAt(position.line);
+		const lineText = currentLine.text;
+		const trimmed = lineText.trim();
+
+		// Only provide suggestions for posting lines (lines that start with whitespace)
+		if (!/^\s+/.test(lineText)) {
+			return undefined;
+		}
+
+		// Don't suggest if line is a comment
+		if (trimmed.startsWith(';')) {
+			return undefined;
+		}
+
+		// Don't suggest if line already has an amount
+		// Check if there's already two spaces or a tab followed by a potential amount
+		const hasAmount = /\s{2,}|\t/.test(trimmed) && /[\d$€£¥-]/.test(trimmed.split(/\s{2,}|\t/)[1] || '');
+		if (hasAmount) {
+			return undefined;
+		}
+
+		// Extract account name from current line
+		const detail = extractPostingDetail(lineText);
+		if (!detail.account) {
+			return undefined;
+		}
+
+		// Parse the current transaction
+		const transaction = parseCurrentTransaction(document, position.line);
+		if (!transaction) {
+			return undefined;
+		}
+
+		// Get formatter options for amount formatting
+		const formatterOptions = getFormatterOptionsFromConfiguration(config);
+
+		// Calculate balancing amount with proper spacing
+		const balancingAmount = calculateBalancingAmount(transaction, formatterOptions, detail.account);
+		if (!balancingAmount) {
+			return undefined;
+		}
+
+		// Create inline completion item
+		const item = new vscode.InlineCompletionItem(balancingAmount);
+		// Insert at the end of the current line text (after account name)
+		item.range = new vscode.Range(position, position);
+
+		return [item];
+	}
+}
+
+/**
+ * Parses the current transaction and returns transaction info
+ * @param document The text document
+ * @param currentLine The line number where cursor is positioned
+ * @returns Transaction info or null if not in a transaction
+ */
+function parseCurrentTransaction(document: vscode.TextDocument, currentLine: number): {
+	headerLine: number;
+	lines: string[];
+} | null {
+	const lines = document.getText().split('\n');
+
+	// Find the start of the transaction (look backwards for date line)
+	let headerLine = -1;
+	for (let i = currentLine; i >= 0; i--) {
+		const line = lines[i].trim();
+		if (isTransactionHeaderLine(line)) {
+			headerLine = i;
+			break;
+		}
+		// If we hit an empty line or another transaction, we're not in a transaction
+		if (line === '' && i < currentLine) {
+			return null;
+		}
+	}
+
+	if (headerLine === -1) {
+		return null;
+	}
+
+	// Find the end of the transaction (look forwards for empty line or next transaction)
+	let endLine = currentLine;
+	for (let i = currentLine + 1; i < lines.length; i++) {
+		const line = lines[i].trim();
+		if (line === '' || isTransactionHeaderLine(line)) {
+			endLine = i - 1;
+			break;
+		}
+		endLine = i;
+	}
+
+	// Extract transaction lines
+	const transactionLines = lines.slice(headerLine, endLine + 1);
+
+	return {
+		headerLine,
+		lines: transactionLines
+	};
+}
+
+/**
+ * Calculates the balancing amount for a transaction
+ * @param transaction Transaction info with lines
+ * @param options Formatter options for styling
+ * @param currentLineAccountName The account name on the current line (where suggestion will appear)
+ * @returns Formatted balancing amount with proper spacing or null if cannot calculate
+ */
+export function calculateBalancingAmount(
+	transaction: { headerLine: number; lines: string[] },
+	options: FormatterOptions,
+	currentLineAccountName: string
+): string | null {
+	const postingLines = transaction.lines.slice(1); // Skip header
+	const indentWidth = Math.max(0, options.indentationWidth);
+
+	// Parse all postings
+	const postings: Array<{
+		line: string;
+		hasAmount: boolean;
+		amount: number | null;
+		currency: string | null;
+		account: string | null;
+	}> = [];
+
+	for (const line of postingLines) {
+		const trimmed = line.trim();
+
+		// Skip empty lines and comments
+		if (!trimmed || trimmed.startsWith(';')) {
+			continue;
+		}
+
+		// Extract posting detail
+		const detail = extractPostingDetail(line);
+		if (!detail.account) {
+			continue;
+		}
+
+		if (detail.amount) {
+			// Parse amount
+			const parsed = parseAmount(detail.amount);
+			if (parsed) {
+				postings.push({
+					line,
+					hasAmount: true,
+					amount: parsed.value,
+					currency: parsed.currency,
+					account: detail.account
+				});
+			} else {
+				postings.push({
+					line,
+					hasAmount: false,
+					amount: null,
+					currency: null,
+					account: detail.account
+				});
+			}
+		} else {
+			postings.push({
+				line,
+				hasAmount: false,
+				amount: null,
+				currency: null,
+				account: detail.account
+			});
+		}
+	}
+
+	// Only suggest if exactly one posting is missing an amount
+	const postingsWithoutAmount = postings.filter(p => !p.hasAmount);
+	if (postingsWithoutAmount.length !== 1) {
+		return null;
+	}
+
+	// Calculate sum of all amounts (should balance to zero)
+	const amountsByCurrency = new Map<string, number>();
+	for (const posting of postings) {
+		if (posting.hasAmount && posting.amount !== null && posting.currency !== null) {
+			const current = amountsByCurrency.get(posting.currency) || 0;
+			amountsByCurrency.set(posting.currency, current + posting.amount);
+		}
+	}
+
+	// Only support single currency for now
+	if (amountsByCurrency.size !== 1) {
+		return null;
+	}
+
+	const [currency, sum] = Array.from(amountsByCurrency.entries())[0];
+	const balancingValue = -sum;
+
+	// Format the amount
+	const formattedAmount = formatAmountValue(balancingValue, currency, options.negativeCommodityStyle);
+
+	// Calculate proper spacing based on alignment settings
+	// This mirrors the logic in formatTransaction()
+	const digitsPrefixLength = getDigitsPrefixLength(formattedAmount);
+
+	let baseDigitsColumn: number;
+	if (options.amountAlignment === 'widest') {
+		// Calculate max column position from existing amounts
+		const postingsWithAmounts = postings.filter(p => p.hasAmount && p.account);
+		const digitColumnCandidates = postingsWithAmounts.map(p => {
+			const posting = p as { account: string; line: string };
+			const detail = extractPostingDetail(posting.line);
+			if (detail.amount) {
+				const { formatted } = formatAmountWithStyle(detail.amount, options.negativeCommodityStyle);
+				const postingDigitsPrefix = formatted ? getDigitsPrefixLength(formatted.trim()) : 0;
+				return indentWidth + posting.account.length + postingDigitsPrefix + 2;
+			}
+			return indentWidth + posting.account.length + 2;
+		});
+
+		// Also consider the current line's account
+		const currentLineColumn = indentWidth + currentLineAccountName.length + digitsPrefixLength + 2;
+
+		// Get the widest account length as fallback
+		const referenceAccountLength = Math.max(
+			...postings.map(p => p.account?.length || 0),
+			currentLineAccountName.length
+		);
+		const fallbackColumn = indentWidth + referenceAccountLength + 2;
+
+		baseDigitsColumn = digitColumnCandidates.length > 0
+			? Math.max(fallbackColumn, currentLineColumn, ...digitColumnCandidates)
+			: Math.max(fallbackColumn, currentLineColumn);
+	} else {
+		// Fixed column mode
+		baseDigitsColumn = options.amountColumnPosition;
+	}
+
+	// Calculate padding needed
+	const paddingTarget = baseDigitsColumn - (indentWidth + currentLineAccountName.length) - digitsPrefixLength;
+	const paddingNeeded = Math.max(2, paddingTarget);
+
+	return ' '.repeat(paddingNeeded) + formattedAmount;
+}
+
+/**
+ * Parses an amount string and extracts value and currency
+ * @param amountStr Amount string (e.g., "$100.50", "-$50.00", "100.50 USD")
+ * @returns Parsed amount or null if invalid
+ */
+export function parseAmount(amountStr: string): { value: number; currency: string } | null {
+	const trimmed = amountStr.trim();
+
+	// Try to match currency symbol patterns: $100, -$100, $-100
+	const currencySymbolMatch = trimmed.match(/^(-)?(\$|€|£|¥)(-)?(\d+(?:,\d+)*(?:\.\d+)?)(.*)$/);
+	if (currencySymbolMatch) {
+		const sign1 = currencySymbolMatch[1] || '';
+		const currency = currencySymbolMatch[2];
+		const sign2 = currencySymbolMatch[3] || '';
+		const numericPart = currencySymbolMatch[4];
+
+		// Determine sign
+		const isNegative = sign1 === '-' || sign2 === '-';
+
+		// Parse numeric value (remove commas)
+		const value = parseFloat(numericPart.replace(/,/g, ''));
+		if (isNaN(value)) {
+			return null;
+		}
+
+		return {
+			value: isNegative ? -value : value,
+			currency
+		};
+	}
+
+	// Try to match plain number with optional currency code: 100.50 USD
+	const plainNumberMatch = trimmed.match(/^(-)?(\d+(?:,\d+)*(?:\.\d+)?)\s*([A-Z]{3})?$/);
+	if (plainNumberMatch) {
+		const isNegative = plainNumberMatch[1] === '-';
+		const numericPart = plainNumberMatch[2];
+		const currencyCode = plainNumberMatch[3] || '$'; // Default to $
+
+		const value = parseFloat(numericPart.replace(/,/g, ''));
+		if (isNaN(value)) {
+			return null;
+		}
+
+		return {
+			value: isNegative ? -value : value,
+			currency: currencyCode
+		};
+	}
+
+	return null;
+}
+
+/**
+ * Formats an amount value with currency
+ * @param value Numeric value
+ * @param currency Currency symbol or code
+ * @param style Negative commodity style
+ * @returns Formatted amount string
+ */
+export function formatAmountValue(value: number, currency: string, style: NegativeCommodityStyle): string {
+	const absValue = Math.abs(value);
+	const isNegative = value < 0;
+
+	// Format number with 2 decimal places and commas
+	const formattedNumber = absValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+	// Apply currency and sign based on style
+	if (style === 'signBeforeSymbol') {
+		// -$100.00
+		return isNegative ? `-${currency}${formattedNumber}` : `${currency}${formattedNumber}`;
+	} else {
+		// $-100.00 or $100.00
+		return isNegative ? `${currency}-${formattedNumber}` : `${currency}${formattedNumber}`;
+	}
 }
 
 // This method is called when your extension is deactivated

@@ -140,6 +140,28 @@
           ],
           "default": "YYYY-MM-DD",
           "description": "Preferred transaction date format"
+        },
+        "hledger-formatter.defaultAccountCategories": {
+          "type": "string",
+          "enum": [
+            "none",
+            "lowercase",
+            "uppercase",
+            "capitalize"
+          ],
+          "enumDescriptions": [
+            "Don't include standard account categories in autocomplete",
+            "Include as lowercase: assets, liabilities, equity, revenues, income, expenses",
+            "Include as uppercase: ASSETS, LIABILITIES, EQUITY, REVENUES, INCOME, EXPENSES",
+            "Include as capitalized: Assets, Liabilities, Equity, Revenues, Income, Expenses"
+          ],
+          "default": "lowercase",
+          "description": "Whether to include standard HLedger account categories in autocomplete and their casing style"
+        },
+        "hledger-formatter.suggestBalancingAmounts": {
+          "type": "boolean",
+          "default": true,
+          "description": "Suggest balancing amounts as inline ghost text that can be accepted with Tab"
         }
       }
     },

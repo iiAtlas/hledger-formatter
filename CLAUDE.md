@@ -32,6 +32,9 @@ This is a VS Code extension called "hledger-formatter" that formats hledger jour
    - `formatTransactionHeader()` - Normalizes transaction header spacing
    - `toggleCommentLines()` - Toggle comments on selected lines (exported for testing)
    - `sortHledgerJournal()` - Sorts journal entries by date (exported for testing)
+   - `parseAmount()` - Parses amount strings and extracts value/currency (exported for testing)
+   - `formatAmountValue()` - Formats numeric values with currency symbols (exported for testing)
+   - `calculateBalancingAmount()` - Calculates balancing amounts for transactions (exported for testing)
 
 2. **Command Registration**:
    - Manual format command: `hledger-formatter.formatDocument`
@@ -142,6 +145,37 @@ After:
   Assets:Cash  $200.00
 ```
 
+### Balancing Amount Suggestions
+
+The extension provides inline ghost text suggestions for balancing amounts that can be accepted with Tab:
+
+**Key Features:**
+- **Automatic & Manual Triggering**: Ghost text appears automatically when cursor is on a posting line without an amount, can also be triggered manually
+- **Smart Calculation**: Calculates what's needed to balance the entire transaction to zero
+- **Conservative Approach**: Only suggests when exactly one posting lacks an amount (unambiguous)
+- **Respects User Settings**: Uses configured `negativeCommodityStyle` for currency position (`$-` vs `-$`)
+- **Configurable**: Can be enabled/disabled via `hledger-formatter.suggestBalancingAmounts` setting (default: true)
+
+**Implementation Details:**
+- Uses VS Code's `InlineCompletionItemProvider` API for ghost text
+- Parses current transaction to find all postings with/without amounts
+- Calculates sum of all existing amounts and suggests the negated sum
+- Supports multiple currencies (suggests for single-currency transactions only)
+- Handles various amount formats: `$100.00`, `-$100.00`, `$-100.00`, `€50.00`, etc.
+
+**Example:**
+```
+2025-10-21 * Apple Developer Program
+  expenses:software:developerfees  $104.45
+  equity:owner:contributions       [Tab shows: -$104.45 in ghost text]
+```
+
+**Helper Functions:**
+- `parseAmount(amountStr)` - Parses amount strings like "$100.50" or "-$50.00" and extracts numeric value and currency symbol
+- `formatAmountValue(value, currency, style)` - Formats numeric values with currency, respecting the configured negative commodity style
+- `calculateBalancingAmount(transaction, options)` - Core logic that calculates the balancing amount for a transaction
+- `parseCurrentTransaction(document, lineNumber)` - Extracts all lines belonging to the current transaction
+
 ### Syntax Highlighting Features
 
 The extension provides rich syntax highlighting with distinct colors for:
@@ -189,6 +223,11 @@ Tests are in `src/test/` with input/output journal pairs:
 - `sort_in.journal` / `sort_out.journal` - Sorting transactions by date
 - Unit tests for transaction integrity and comment preservation
 
+**Balancing Amount Tests:**
+- Unit tests for `parseAmount()` - Various amount formats, currencies, and sign positions
+- Unit tests for `formatAmountValue()` - Formatting with different negative commodity styles
+- Unit tests for `calculateBalancingAmount()` - Simple/complex transactions, edge cases
+
 **Syntax Highlighting Tests:**
 - `test-syntax.journal` - Comprehensive syntax highlighting examples including all supported features
 
@@ -205,17 +244,26 @@ Test verification includes:
 ## Configuration
 
 The extension provides the following settings:
-- `hledger-formatter.formatOnSave` (boolean, default: true) - Auto-format on file save
-- `hledger-formatter.sortOnSave` (boolean, default: true) - Sort journal entries by date on save
-- `hledger-formatter.amountColumnPosition` (number, default: 42, range: 20-100) - Column position for aligning amounts
+- `hledger-formatter.formatOnSave` (boolean, default: false) - Auto-format on file save
+- `hledger-formatter.sortOnSave` (boolean, default: false) - Sort journal entries by date on save
+- `hledger-formatter.amountColumnPosition` (number, default: 42, range: 20-100) - Column position for aligning amounts (when using fixed column alignment)
+- `hledger-formatter.amountAlignment` (enum: 'fixedColumn' | 'widest', default: 'widest') - Controls how posting amounts are aligned
+- `hledger-formatter.indentationWidth` (enum: 2 | 4, default: 4) - Number of spaces used to indent postings
+- `hledger-formatter.negativeCommodityStyle` (enum: 'signBeforeSymbol' | 'symbolBeforeSign', default: 'symbolBeforeSign') - How negative amounts are formatted (-$100 vs $-100)
+- `hledger-formatter.dateFormat` (enum: 'YYYY-MM-DD' | 'YYYY/MM/DD' | 'YYYY.MM.DD', default: 'YYYY-MM-DD') - Preferred transaction date format
+- `hledger-formatter.defaultAccountCategories` (enum: 'none' | 'lowercase' | 'uppercase' | 'capitalize', default: 'lowercase') - Standard account categories in autocomplete
+- `hledger-formatter.suggestBalancingAmounts` (boolean, default: true) - Suggest balancing amounts as inline ghost text (accept with Tab)
 
 ## Key Implementation Details
 
-- Configurable amount column alignment (default position: 42)
-- Negative amount format standardization
+- Configurable amount column alignment (default position: 42, 'widest' mode for optimal spacing)
+- Negative amount format standardization (configurable: `-$100` or `$-100`)
 - Transaction boundary detection using date regex: `/^\d{4}[/-]\d{2}[/-]\d{2}/`
 - Supports transaction status markers (`*`, `!`)
 - Preserves comments within transactions
 - Comprehensive TextMate grammar for syntax highlighting
 - Theme contribution with optimized colors for hledger files
 - Transaction sorting with preservation of structure and comments
+- Inline completion provider for balancing amount suggestions (ghost text accepted with Tab)
+- Account autocomplete with standard categories and user-defined accounts
+- Case-insensitive deduplication of standard accounts with user accounts
