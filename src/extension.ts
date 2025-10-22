@@ -1046,17 +1046,78 @@ class HledgerAccountCompletionProvider implements vscode.CompletionItemProvider 
 			1000 // Limit to 1000 files
 		);
 
-		// Extract accounts from each file
+		// Track visited files to avoid circular includes
+		const visitedFiles = new Set<string>();
+
+		// Extract accounts from each file (including included files)
 		for (const fileUri of journalFiles) {
 			try {
-				const document = await vscode.workspace.openTextDocument(fileUri);
-				const accounts = this.extractAccountsFromDocument(document.getText());
-				accounts.forEach(account => this.accountCache.add(account));
+				await this.processJournalFile(fileUri, visitedFiles);
 			} catch (error) {
 				// Skip files that can't be read
 				console.error(`Failed to read file ${fileUri.fsPath}:`, error);
 			}
 		}
+	}
+
+	/**
+	 * Processes a journal file and its includes recursively
+	 */
+	private async processJournalFile(fileUri: vscode.Uri, visitedFiles: Set<string>): Promise<void> {
+		const filePath = fileUri.fsPath;
+
+		// Avoid circular includes
+		if (visitedFiles.has(filePath)) {
+			return;
+		}
+		visitedFiles.add(filePath);
+
+		try {
+			const document = await vscode.workspace.openTextDocument(fileUri);
+			const text = document.getText();
+
+			// Extract accounts from this file
+			const accounts = this.extractAccountsFromDocument(text);
+			accounts.forEach(account => this.accountCache.add(account));
+
+			// Extract and process included files
+			const includedFiles = this.extractIncludedFiles(text, fileUri);
+			for (const includedUri of includedFiles) {
+				await this.processJournalFile(includedUri, visitedFiles);
+			}
+		} catch (error) {
+			// Skip files that can't be read
+			console.error(`Failed to process file ${filePath}:`, error);
+		}
+	}
+
+	/**
+	 * Extracts included file paths from journal text
+	 */
+	private extractIncludedFiles(text: string, parentFileUri: vscode.Uri): vscode.Uri[] {
+		const includedFiles: vscode.Uri[] = [];
+		const lines = text.split('\n');
+
+		for (const line of lines) {
+			const trimmed = line.trim();
+
+			// Match include directives: "!include path" or "include path"
+			const includeMatch = trimmed.match(/^!?include\s+(.+)$/);
+			if (includeMatch) {
+				const includePath = includeMatch[1].trim();
+
+				try {
+					// Resolve path relative to parent file
+					const parentDir = vscode.Uri.joinPath(parentFileUri, '..');
+					const resolvedUri = vscode.Uri.joinPath(parentDir, includePath);
+					includedFiles.push(resolvedUri);
+				} catch (error) {
+					console.error(`Failed to resolve include path: ${includePath}`, error);
+				}
+			}
+		}
+
+		return includedFiles;
 	}
 
 	/**
