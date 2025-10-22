@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 type AmountAlignment = 'fixedColumn' | 'widest';
 type NegativeCommodityStyle = 'signBeforeSymbol' | 'symbolBeforeSign';
@@ -352,7 +353,18 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-	context.subscriptions.push(formatCommand, formatOnSaveDisposable, formatterProvider, rangeFormatterProvider, toggleCommentCommand, newFileCommand, sortCommand);
+	// Register account autocomplete provider
+	const accountCompletionProvider = vscode.languages.registerCompletionItemProvider(
+		[
+			{ scheme: 'file', pattern: '**/*.journal' },
+			{ scheme: 'file', pattern: '**/*.hledger' },
+			{ scheme: 'file', pattern: '**/*.ledger' }
+		],
+		new HledgerAccountCompletionProvider(),
+		':' // Trigger on colon for hierarchical accounts
+	);
+
+	context.subscriptions.push(formatCommand, formatOnSaveDisposable, formatterProvider, rangeFormatterProvider, toggleCommentCommand, newFileCommand, sortCommand, accountCompletionProvider);
 }
 
 /**
@@ -928,6 +940,162 @@ export function toggleCommentLines(text: string, startLine: number, endLine: num
 	}
 
 	return lines.join('\n');
+}
+
+/**
+ * Completion provider for hledger account names
+ */
+class HledgerAccountCompletionProvider implements vscode.CompletionItemProvider {
+	// Standard hledger top-level account categories (conventions)
+	private readonly standardAccounts = [
+		'Assets',
+		'Liabilities',
+		'Equity',
+		'Revenues',
+		'Income',
+		'Expenses'
+	];
+
+	private accountCache: Set<string> = new Set();
+	private lastCacheUpdate: number = 0;
+	private readonly cacheExpiryMs = 5000; // Refresh cache every 5 seconds
+
+	async provideCompletionItems(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		token: vscode.CancellationToken,
+		context: vscode.CompletionContext
+	): Promise<vscode.CompletionItem[]> {
+		const linePrefix = document.lineAt(position).text.substring(0, position.character);
+
+		// Only provide completions for posting lines (lines that start with whitespace)
+		// or at the beginning of an account name
+		const isPostingLine = /^\s+/.test(linePrefix);
+		if (!isPostingLine) {
+			return [];
+		}
+
+		// Update account cache if needed
+		await this.updateAccountCache();
+
+		// Get the current word being typed
+		const wordRange = document.getWordRangeAtPosition(position, /[\w:]+/);
+		const currentWord = wordRange ? document.getText(wordRange) : '';
+
+		// Build completion items
+		const completionItems: vscode.CompletionItem[] = [];
+
+		// Add standard accounts
+		for (const account of this.standardAccounts) {
+			const item = new vscode.CompletionItem(account, vscode.CompletionItemKind.Field);
+			item.detail = 'Standard account category';
+			item.sortText = `0_${account}`; // Sort standard accounts first
+			completionItems.push(item);
+		}
+
+		// Add accounts from cache
+		for (const account of this.accountCache) {
+			const item = new vscode.CompletionItem(account, vscode.CompletionItemKind.Field);
+			item.detail = 'Existing account';
+			item.sortText = `1_${account}`; // Sort existing accounts after standard ones
+			completionItems.push(item);
+		}
+
+		return completionItems;
+	}
+
+	/**
+	 * Updates the account cache by scanning all journal files in the workspace
+	 */
+	private async updateAccountCache(): Promise<void> {
+		const now = Date.now();
+		if (now - this.lastCacheUpdate < this.cacheExpiryMs) {
+			return; // Cache is still fresh
+		}
+
+		this.accountCache.clear();
+		this.lastCacheUpdate = now;
+
+		// Find all journal files in the workspace
+		const journalFiles = await vscode.workspace.findFiles(
+			'**/*.{journal,hledger,ledger}',
+			'**/node_modules/**',
+			1000 // Limit to 1000 files
+		);
+
+		// Extract accounts from each file
+		for (const fileUri of journalFiles) {
+			try {
+				const document = await vscode.workspace.openTextDocument(fileUri);
+				const accounts = this.extractAccountsFromDocument(document.getText());
+				accounts.forEach(account => this.accountCache.add(account));
+			} catch (error) {
+				// Skip files that can't be read
+				console.error(`Failed to read file ${fileUri.fsPath}:`, error);
+			}
+		}
+	}
+
+	/**
+	 * Extracts account names from journal text
+	 */
+	private extractAccountsFromDocument(text: string): Set<string> {
+		const accounts = new Set<string>();
+		const lines = text.split('\n');
+
+		for (const line of lines) {
+			const trimmed = line.trim();
+
+			// Skip empty lines and comments
+			if (!trimmed || trimmed.startsWith(';')) {
+				continue;
+			}
+
+			// Skip transaction header lines (lines that start with a date)
+			if (/^\d{4}[/-]\d{2}[/-]\d{2}/.test(trimmed)) {
+				continue;
+			}
+
+			// Check if this is a posting line (starts with whitespace)
+			if (!/^\s+/.test(line)) {
+				continue;
+			}
+
+			// Extract account name (everything before two or more spaces, or before tab)
+			const match = trimmed.match(/^([^\s]+(?:\s+[^\s]+)*?)(?:\s{2,}|\t)/);
+			if (match) {
+				const account = match[1].trim();
+				if (account && !account.startsWith(';')) {
+					accounts.add(account);
+
+					// Also add parent accounts for hierarchical completions
+					const parts = account.split(':');
+					for (let i = 1; i < parts.length; i++) {
+						const parentAccount = parts.slice(0, i).join(':');
+						accounts.add(parentAccount);
+					}
+				}
+			} else {
+				// Line might be an account without an amount
+				const accountOnly = trimmed.match(/^([^\s;]+(?::[^\s;]+)*)/);
+				if (accountOnly) {
+					const account = accountOnly[1].trim();
+					if (account) {
+						accounts.add(account);
+
+						// Also add parent accounts
+						const parts = account.split(':');
+						for (let i = 1; i < parts.length; i++) {
+							const parentAccount = parts.slice(0, i).join(':');
+							accounts.add(parentAccount);
+						}
+					}
+				}
+			}
+		}
+
+		return accounts;
+	}
 }
 
 // This method is called when your extension is deactivated
