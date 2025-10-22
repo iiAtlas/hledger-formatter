@@ -18,6 +18,7 @@ All notable changes to the "hledger-formatter" extension will be documented in t
   - Case-insensitive deduplication of standard categories with user accounts
   - Configurable casing for standard categories via `hledger-formatter.defaultAccountCategories` setting
   - Hierarchical account completion with colon (`:`) trigger character
+- Added support for more comment formats (`comment` / `end comment` blocks, `;`, `#`, and `*`)
 
 ### Fixed
 - Fixed format spacing on first row entries

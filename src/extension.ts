@@ -6,6 +6,7 @@ import * as path from 'path';
 type AmountAlignment = 'fixedColumn' | 'widest';
 type NegativeCommodityStyle = 'signBeforeSymbol' | 'symbolBeforeSign';
 type DateFormatStyle = 'YYYY-MM-DD' | 'YYYY/MM/DD' | 'YYYY.MM.DD';
+type CommentCharacter = ';' | '#' | '*';
 
 export interface FormatterOptions {
 	amountColumnPosition: number;
@@ -13,6 +14,7 @@ export interface FormatterOptions {
 	indentationWidth: number;
 	negativeCommodityStyle: NegativeCommodityStyle;
 	dateFormat: DateFormatStyle;
+	commentCharacter: CommentCharacter;
 }
 
 const DEFAULT_FORMATTER_OPTIONS: FormatterOptions = {
@@ -20,7 +22,8 @@ const DEFAULT_FORMATTER_OPTIONS: FormatterOptions = {
 	amountAlignment: 'widest',
 	indentationWidth: 4,
 	negativeCommodityStyle: 'symbolBeforeSign',
-	dateFormat: 'YYYY-MM-DD'
+	dateFormat: 'YYYY-MM-DD',
+	commentCharacter: ';'
 };
 
 function getFormatterOptionsFromConfiguration(config?: vscode.WorkspaceConfiguration): FormatterOptions {
@@ -30,7 +33,8 @@ function getFormatterOptionsFromConfiguration(config?: vscode.WorkspaceConfigura
 		amountAlignment: sourceConfig.get<AmountAlignment>('amountAlignment', DEFAULT_FORMATTER_OPTIONS.amountAlignment),
 		indentationWidth: sourceConfig.get<number>('indentationWidth', DEFAULT_FORMATTER_OPTIONS.indentationWidth),
 		negativeCommodityStyle: sourceConfig.get<NegativeCommodityStyle>('negativeCommodityStyle', DEFAULT_FORMATTER_OPTIONS.negativeCommodityStyle),
-		dateFormat: sourceConfig.get<DateFormatStyle>('dateFormat', DEFAULT_FORMATTER_OPTIONS.dateFormat)
+		dateFormat: sourceConfig.get<DateFormatStyle>('dateFormat', DEFAULT_FORMATTER_OPTIONS.dateFormat),
+		commentCharacter: sourceConfig.get<CommentCharacter>('commentCharacter', DEFAULT_FORMATTER_OPTIONS.commentCharacter)
 	};
 }
 
@@ -56,13 +60,66 @@ function normalizeFormatterOptions(optionsOrColumn?: number | Partial<FormatterO
 		: merged.dateFormat === 'YYYY.MM.DD'
 			? 'YYYY.MM.DD'
 			: 'YYYY-MM-DD';
+	const commentCharacter: CommentCharacter = merged.commentCharacter === '#'
+		? '#'
+		: merged.commentCharacter === '*'
+			? '*'
+			: ';';
 
 	return {
 		amountColumnPosition,
 		amountAlignment,
 		indentationWidth,
 		negativeCommodityStyle,
-		dateFormat
+		dateFormat,
+		commentCharacter
+	};
+}
+
+/**
+ * Checks if a line is a comment (starts with #, ;, or *)
+ * @param line The line to check (should be trimmed)
+ * @returns true if the line is a comment
+ */
+function isCommentLine(line: string): boolean {
+	const trimmed = line.trim();
+	return trimmed.startsWith(';') || trimmed.startsWith('#') || trimmed.startsWith('*');
+}
+
+/**
+ * Checks if a line starts a comment block
+ * @param line The line to check (should be trimmed)
+ * @returns true if the line starts a comment block
+ */
+function isCommentBlockStart(line: string): boolean {
+	return line.trim() === 'comment';
+}
+
+/**
+ * Checks if a line ends a comment block
+ * @param line The line to check (should be trimmed)
+ * @returns true if the line ends a comment block
+ */
+function isCommentBlockEnd(line: string): boolean {
+	return line.trim() === 'end comment';
+}
+
+/**
+ * Extracts the comment character and content from a comment line
+ * @param line The comment line
+ * @returns An object with the comment character, leading whitespace, and content, or null if not a comment
+ */
+function parseCommentLine(line: string): { char: CommentCharacter; leadingWhitespace: string; content: string } | null {
+	const match = line.match(/^(\s*)([#;*])\s?(.*)$/);
+	if (!match) {
+		return null;
+	}
+
+	const [, leadingWhitespace, char, content] = match;
+	return {
+		char: char as CommentCharacter,
+		leadingWhitespace,
+		content
 	};
 }
 
@@ -234,7 +291,9 @@ export function activate(context: vscode.ExtensionContext) {
 		const endLine = selection.end.line;
 		const text = document.getText();
 
-		const modifiedText = toggleCommentLines(text, startLine, endLine);
+		const config = vscode.workspace.getConfiguration('hledger-formatter');
+		const formatterOptions = getFormatterOptionsFromConfiguration(config);
+		const modifiedText = toggleCommentLines(text, startLine, endLine, formatterOptions);
 
 		editor.edit((editBuilder) => {
 			const fullRange = new vscode.Range(
@@ -392,10 +451,33 @@ export function formatHledgerJournal(text: string, optionsOrColumn?: number | Pa
 	let transactionLines: string[] = [];
 	let lastWasTransaction = false;
 	let hasContent = false;
+	let inCommentBlock = false;
 
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i];
 		const trimmed = line.trim();
+
+		// Handle comment blocks
+		if (isCommentBlockStart(trimmed)) {
+			inCommentBlock = true;
+			if (inTransaction) {
+				formattedLines.push(...formatTransaction(transactionLines, options));
+				transactionLines = [];
+				inTransaction = false;
+			}
+			formattedLines.push(line);
+			lastWasTransaction = false;
+			hasContent = true;
+			continue;
+		}
+
+		if (inCommentBlock) {
+			formattedLines.push(line);
+			if (isCommentBlockEnd(trimmed)) {
+				inCommentBlock = false;
+			}
+			continue;
+		}
 
 		if (!trimmed) {
 			if (inTransaction) {
@@ -411,7 +493,7 @@ export function formatHledgerJournal(text: string, optionsOrColumn?: number | Pa
 			continue;
 		}
 
-		if (trimmed.startsWith(';')) {
+		if (isCommentLine(trimmed)) {
 			if (inTransaction) {
 				transactionLines.push(line);
 			} else {
@@ -476,7 +558,7 @@ function formatTransaction(lines: string[], options: FormatterOptions): string[]
 	const postingLines: string[] = [];
 
 	for (let i = 1; i < lines.length; i++) {
-		if (!lines[i].trim().startsWith(';')) {
+		if (!isCommentLine(lines[i])) {
 			postingLines.push(lines[i]);
 		} else {
 			formattedLines.push(lines[i]);
@@ -892,9 +974,11 @@ function parseTransactions(text: string): Array<{ date: string; content: string 
  * @param text The original journal text
  * @param startLine Zero-based start line number
  * @param endLine Zero-based end line number
+ * @param optionsOrColumn Optional formatter options or an amount column position for backward compatibility
  * @returns The text with comments toggled on the specified lines
  */
-export function toggleCommentLines(text: string, startLine: number, endLine: number): string {
+export function toggleCommentLines(text: string, startLine: number, endLine: number, optionsOrColumn?: number | Partial<FormatterOptions>): string {
+	const options = normalizeFormatterOptions(optionsOrColumn);
 	const lines = text.split('\n');
 
 	// First pass: Analyze the selection to determine action
@@ -909,9 +993,9 @@ export function toggleCommentLines(text: string, startLine: number, endLine: num
 		}
 
 		// Check if line is commented (with preserved indentation)
-		const commentMatch = lineText.match(/^(\s*); (.*)$/);
+		const parsedComment = parseCommentLine(lineText);
 
-		if (!commentMatch) {
+		if (!parsedComment) {
 			// Found an uncommented non-empty line
 			hasUncommentedLines = true;
 			break;
@@ -928,23 +1012,23 @@ export function toggleCommentLines(text: string, startLine: number, endLine: num
 		}
 
 		// Check if line is commented (with preserved indentation)
-		const commentMatch = lineText.match(/^(\s*); (.*)$/);
+		const parsedComment = parseCommentLine(lineText);
 
 		if (hasUncommentedLines) {
 			// Comment all lines (including already commented ones)
-			if (!commentMatch) {
+			if (!parsedComment) {
 				// Line is not commented, so comment it
 				const leadingWhitespace = lineText.match(/^\s*/)?.[0] || '';
 				const restOfLine = lineText.substring(leadingWhitespace.length);
-				lines[lineNumber] = `${leadingWhitespace}; ${restOfLine}`;
+				// Use configured comment character and add a space after it
+				lines[lineNumber] = `${leadingWhitespace}${options.commentCharacter} ${restOfLine}`;
 			}
 			// If line is already commented, leave it as-is
 		} else {
 			// Uncomment all lines (all lines should be commented at this point)
-			if (commentMatch) {
+			if (parsedComment) {
 				// Uncomment: restore original whitespace and content
-				const [, leadingWhitespace, content] = commentMatch;
-				lines[lineNumber] = `${leadingWhitespace}${content}`;
+				lines[lineNumber] = `${parsedComment.leadingWhitespace}${parsedComment.content}`;
 			}
 		}
 	}

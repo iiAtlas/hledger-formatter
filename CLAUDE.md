@@ -50,7 +50,8 @@ This is a VS Code extension called "hledger-formatter" that formats hledger jour
    - Hierarchical account coloring (up to 5 levels)
    - Transaction status differentiation (reconciled/pending/unreconciled)
    - Project tag support (`project: name` or `project:name`)
-   - Comment highlighting (including indented and inline comments)
+   - Comment highlighting for all formats (`;`, `#`, `*`, and `comment` blocks)
+   - Supports indented and inline comments
    - Amount and date highlighting
 
 ### Formatting Logic
@@ -66,17 +67,27 @@ The formatter aligns all amounts to a configurable column position (default: 42 
 
 The comment toggle feature (Cmd+/) uses smart block behavior and preserves indentation:
 
+**Supported Comment Formats:**
+All hledger comment formats are supported:
+- `;` (semicolon) - Most common format, recommended for temporary commenting
+- `#` (hash/pound) - Recommended for top-level notes
+- `*` (asterisk) - Useful for Emacs org-mode users
+- `comment`/`end comment` - Multi-line comment blocks (preserved during formatting)
+
+The preferred comment character when toggling comments is configurable via `hledger-formatter.commentCharacter` setting (default: `;`).
+
 **Smart Block Behavior:**
 - Analyzes entire selection to determine if ANY lines are uncommented
-- If any uncommented lines exist → comments ALL lines in selection
-- If all lines are commented → uncomments ALL lines in selection
+- If any uncommented lines exist → comments ALL lines in selection using the configured character
+- If all lines are commented → uncomments ALL lines in selection (detects any comment format)
 - Eliminates alternating comment patterns in mixed selections
 
 **Indentation Preservation:**
-- Adds `; ` after existing indentation rather than at line start
+- Adds comment character and space after existing indentation rather than at line start
 - Transaction headers: `2025-03-01 Transaction` → `; 2025-03-01 Transaction`
 - Posting lines: `  Assets:Cash  $100.00` → `  ; Assets:Cash  $100.00`
 - Maintains visual hierarchy when commenting/uncommenting
+- Respects configured indentation width
 
 **Example:**
 ```
@@ -253,6 +264,7 @@ The extension provides the following settings:
 - `hledger-formatter.dateFormat` (enum: 'YYYY-MM-DD' | 'YYYY/MM/DD' | 'YYYY.MM.DD', default: 'YYYY-MM-DD') - Preferred transaction date format
 - `hledger-formatter.defaultAccountCategories` (enum: 'none' | 'lowercase' | 'uppercase' | 'capitalize', default: 'lowercase') - Standard account categories in autocomplete
 - `hledger-formatter.suggestBalancingAmounts` (boolean, default: true) - Suggest balancing amounts as inline ghost text (accept with Tab)
+- `hledger-formatter.commentCharacter` (string, default: ";") - Preferred comment character for toggling comments (";", "#", or "*")
 
 ## Key Implementation Details
 
