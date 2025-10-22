@@ -162,6 +162,21 @@
           "type": "boolean",
           "default": true,
           "description": "Suggest balancing amounts as inline ghost text that can be accepted with Tab"
+        },
+        "hledger-formatter.commentCharacter": {
+          "type": "string",
+          "enum": [
+            ";",
+            "#",
+            "*"
+          ],
+          "enumDescriptions": [
+            "Use semicolon for comments (most common in hledger)",
+            "Use hash/pound for comments",
+            "Use asterisk for comments (useful for Emacs org-mode users)"
+          ],
+          "default": ";",
+          "description": "Preferred comment character to use when toggling comments"
         }
       }
     },

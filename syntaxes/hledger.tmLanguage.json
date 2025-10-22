@@ -38,8 +38,31 @@
     "comment": {
       "patterns": [
         {
+          "name": "comment.block.hledger",
+          "begin": "^\\s*comment\\s*$",
+          "end": "^\\s*end comment\\s*$",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.control.comment-block.hledger"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "keyword.control.comment-block.hledger"
+            }
+          }
+        },
+        {
           "name": "comment.line.semicolon.hledger",
           "match": "^\\s*;.*$"
+        },
+        {
+          "name": "comment.line.hash.hledger",
+          "match": "^\\s*#.*$"
+        },
+        {
+          "name": "comment.line.asterisk.hledger",
+          "match": "^\\s*\\*.*$"
         }
       ]
     },
@@ -123,8 +146,12 @@
     "posting": {
       "patterns": [
         {
+          "name": "comment.line.indented.hledger",
+          "match": "^\\s+[;#*].*$"
+        },
+        {
           "name": "meta.posting.hledger",
-          "match": "^\\s+(([^:;\\s]+)(?::([^:;\\s]+)(?::([^:;\\s]+)(?::([^:;\\s]+)(?::([^:;\\s]+))?)?)?)?(?:\\s+([^;]+))?(\\s*;.*)?$)",
+          "match": "^\\s+(([^:;#*\\s]+)(?::([^:;#*\\s]+)(?::([^:;#*\\s]+)(?::([^:;#*\\s]+)(?::([^:;#*\\s]+))?)?)?)?(?:\\s+([^;#*]+))?(\\s*[;#*].*)?$)",
           "captures": {
             "2": {
               "name": "entity.name.tag.account.level1.hledger"
@@ -150,7 +177,7 @@
               ]
             },
             "8": {
-              "name": "comment.line.semicolon.hledger"
+              "name": "comment.line.inline.hledger"
             }
           }
         }

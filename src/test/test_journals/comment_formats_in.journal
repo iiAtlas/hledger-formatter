@@ -1,0 +1,39 @@
+; Semicolon comment - most common format
+
+# Hash comment - for top-level notes
+
+* Asterisk comment - useful for org-mode users
+
+comment
+This is a multi-line comment block.
+It continues until we see "end comment"
+or reach the end of the file.
+end comment
+
+2025-03-01 Test with semicolon comments
+  ; This is an indented semicolon comment
+    Assets:Cash                             $100.00
+  Income:Salary                          -$100.00
+
+2025-03-02 Test with hash comments
+  # This is an indented hash comment
+    Assets:Bank                             $200.00
+  Income:Bonus                           -$200.00
+
+2025-03-03 Test with asterisk comments
+  * This is an indented asterisk comment
+    Assets:Checking                         $300.00
+  Income:Consulting                      -$300.00
+
+# Top-level hash comment between transactions
+
+2025-03-04 Mixed inline comments
+    Assets:Savings                          $50.00  ; inline semicolon comment
+  Income:Interest                         -$50.00  # inline hash comment
+
+* Asterisk heading for org-mode section
+
+2025-03-05 Test formatting preservation
+  Assets:Account1                         $400.00
+  Assets:Account2                         $500.00
+  Liabilities:Credit                     -$900.00

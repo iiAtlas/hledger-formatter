@@ -646,22 +646,92 @@ suite('Hledger Formatter Tests', () => {
 	test('New file command generates correct filename format', () => {
 		// Test month name mapping
 		const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-		
+
 		// Verify each month generates correct format
 		for (let month = 1; month <= 12; month++) {
 			const paddedMonth = month.toString().padStart(2, '0');
 			const monthName = monthNames[month - 1];
 			const expectedFileName = `${paddedMonth}-${monthName}.journal`;
-			
+
 			// Verify format
-			assert.ok(expectedFileName.match(/^\d{2}-[a-z]{3}\.journal$/), 
+			assert.ok(expectedFileName.match(/^\d{2}-[a-z]{3}\.journal$/),
 				`File name ${expectedFileName} should match format XX-mon.journal`);
 		}
-		
+
 		// Specific test cases
 		assert.strictEqual(monthNames[8], 'sep', 'September should be abbreviated as "sep"');
 		assert.strictEqual('09', '9'.padStart(2, '0'), 'Month 9 should pad to "09"');
 		assert.strictEqual('12', '12'.padStart(2, '0'), 'Month 12 should stay as "12"');
+	});
+
+	test('Format with all comment formats', () => {
+		// Read input and expected output files
+		const inputJournal = readTestFile('comment_formats_in.journal');
+		const expectedOutput = readTestFile('comment_formats_out.journal');
+
+		// Format the input journal
+		const formattedJournal = formatHledgerJournal(inputJournal);
+
+		// Normalize both texts to handle line endings and whitespace
+		const normalizedFormatted = normalizeText(formattedJournal);
+		const normalizedExpected = normalizeText(expectedOutput);
+
+		// Verify the formatting matches the expected output
+		assert.strictEqual(normalizedFormatted, normalizedExpected,
+			'Formatter should handle all comment formats (#, ;, *, comment blocks)');
+	});
+
+	test('Toggle comment with hash character preference', () => {
+		const testInput = '2025-03-01 Test transaction\n    Assets:Cash                $100.00\n    Income:Salary             -$100.00';
+
+		// Toggle comment with hash preference
+		const result = toggleCommentLines(testInput, 0, 0, { commentCharacter: '#' });
+		const lines = result.split('\n');
+
+		// First line should be commented with hash
+		assert.strictEqual(lines[0], '# 2025-03-01 Test transaction');
+	});
+
+	test('Toggle comment with asterisk character preference', () => {
+		const testInput = '2025-03-01 Test transaction\n    Assets:Cash                $100.00\n    Income:Salary             -$100.00';
+
+		// Toggle comment with asterisk preference
+		const result = toggleCommentLines(testInput, 0, 0, { commentCharacter: '*' });
+		const lines = result.split('\n');
+
+		// First line should be commented with asterisk
+		assert.strictEqual(lines[0], '* 2025-03-01 Test transaction');
+	});
+
+	test('Toggle uncomment any comment format', () => {
+		const testInputs = [
+			'; 2025-03-01 Test transaction',
+			'# 2025-03-01 Test transaction',
+			'* 2025-03-01 Test transaction'
+		];
+
+		for (const testInput of testInputs) {
+			const result = toggleCommentLines(testInput, 0, 0);
+			// All should uncomment to the same result
+			assert.strictEqual(result, '2025-03-01 Test transaction',
+				`Should uncomment ${testInput[0]} format`);
+		}
+	});
+
+	test('Toggle comment preserves indentation with all formats', () => {
+		const testInput = '2025-03-01 Test\n    Assets:Cash    $100.00\n    Income:Salary  -$100.00';
+
+		// Test with each comment character
+		for (const char of [';', '#', '*'] as const) {
+			const result = toggleCommentLines(testInput, 1, 2, { commentCharacter: char });
+			const lines = result.split('\n');
+
+			// Posting lines should be commented with preserved indentation
+			assert.strictEqual(lines[1], `    ${char} Assets:Cash    $100.00`,
+				`Should preserve indentation with ${char} character`);
+			assert.strictEqual(lines[2], `    ${char} Income:Salary  -$100.00`,
+				`Should preserve indentation with ${char} character`);
+		}
 	});
 
 	// Helper function to verify posting lines use the default indentation width (4 spaces)
