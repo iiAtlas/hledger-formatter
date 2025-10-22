@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 // Import the formatter, comment, and sort functions directly for testing
-import { formatHledgerJournal, toggleCommentLines, sortHledgerJournal } from '../extension';
+import { formatHledgerJournal, toggleCommentLines, sortHledgerJournal, parseAmount, formatAmountValue, calculateBalancingAmount } from '../extension';
 
 suite('Hledger Formatter Tests', () => {
 	vscode.window.showInformationMessage('Running hledger formatter tests');
@@ -758,4 +758,219 @@ suite('Hledger Formatter Tests', () => {
 		
 		return true;
 	}
+
+	// Tests for balancing amount suggestions
+	test('parseAmount - positive dollar amount', () => {
+		const result = parseAmount('$100.50');
+		assert.ok(result, 'Should parse positive dollar amount');
+		assert.strictEqual(result?.value, 100.50);
+		assert.strictEqual(result?.currency, '$');
+	});
+
+	test('parseAmount - negative dollar amount with sign before symbol', () => {
+		const result = parseAmount('-$50.25');
+		assert.ok(result, 'Should parse negative amount with sign before symbol');
+		assert.strictEqual(result?.value, -50.25);
+		assert.strictEqual(result?.currency, '$');
+	});
+
+	test('parseAmount - negative dollar amount with sign after symbol', () => {
+		const result = parseAmount('$-75.00');
+		assert.ok(result, 'Should parse negative amount with sign after symbol');
+		assert.strictEqual(result?.value, -75.00);
+		assert.strictEqual(result?.currency, '$');
+	});
+
+	test('parseAmount - amount with commas', () => {
+		const result = parseAmount('$1,234.56');
+		assert.ok(result, 'Should parse amount with commas');
+		assert.strictEqual(result?.value, 1234.56);
+		assert.strictEqual(result?.currency, '$');
+	});
+
+	test('parseAmount - Euro symbol', () => {
+		const result = parseAmount('€99.99');
+		assert.ok(result, 'Should parse Euro amount');
+		assert.strictEqual(result?.value, 99.99);
+		assert.strictEqual(result?.currency, '€');
+	});
+
+	test('parseAmount - invalid format', () => {
+		const result = parseAmount('not a number');
+		assert.strictEqual(result, null, 'Should return null for invalid format');
+	});
+
+	test('formatAmountValue - positive with symbolBeforeSign', () => {
+		const result = formatAmountValue(100.50, '$', 'symbolBeforeSign');
+		assert.strictEqual(result, '$100.50');
+	});
+
+	test('formatAmountValue - negative with symbolBeforeSign', () => {
+		const result = formatAmountValue(-100.50, '$', 'symbolBeforeSign');
+		assert.strictEqual(result, '$-100.50');
+	});
+
+	test('formatAmountValue - negative with signBeforeSymbol', () => {
+		const result = formatAmountValue(-100.50, '$', 'signBeforeSymbol');
+		assert.strictEqual(result, '-$100.50');
+	});
+
+	test('formatAmountValue - large amount with commas', () => {
+		const result = formatAmountValue(1234.56, '$', 'symbolBeforeSign');
+		assert.strictEqual(result, '$1,234.56');
+	});
+
+	test('calculateBalancingAmount - simple two posting transaction', () => {
+		const transaction = {
+			headerLine: 0,
+			lines: [
+				'2025-10-22 * Test',
+				'    expenses:food    $50.00',
+				'    assets:cash'
+			]
+		};
+
+		const result = calculateBalancingAmount(transaction, {
+			amountColumnPosition: 42,
+			amountAlignment: 'widest',
+			indentationWidth: 4,
+			negativeCommodityStyle: 'symbolBeforeSign',
+			dateFormat: 'YYYY-MM-DD'
+		});
+
+		assert.ok(result, 'Should calculate balancing amount');
+		assert.strictEqual(result, '  $-50.00');
+	});
+
+	test('calculateBalancingAmount - negative balancing amount', () => {
+		const transaction = {
+			headerLine: 0,
+			lines: [
+				'2025-10-22 * Test',
+				'    assets:cash    $100.00',
+				'    income:salary'
+			]
+		};
+
+		const result = calculateBalancingAmount(transaction, {
+			amountColumnPosition: 42,
+			amountAlignment: 'widest',
+			indentationWidth: 4,
+			negativeCommodityStyle: 'symbolBeforeSign',
+			dateFormat: 'YYYY-MM-DD'
+		});
+
+		assert.ok(result, 'Should calculate negative balancing amount');
+		assert.strictEqual(result, '  $-100.00');
+	});
+
+	test('calculateBalancingAmount - respects signBeforeSymbol style', () => {
+		const transaction = {
+			headerLine: 0,
+			lines: [
+				'2025-10-22 * Test',
+				'    assets:cash    $100.00',
+				'    income:salary'
+			]
+		};
+
+		const result = calculateBalancingAmount(transaction, {
+			amountColumnPosition: 42,
+			amountAlignment: 'widest',
+			indentationWidth: 4,
+			negativeCommodityStyle: 'signBeforeSymbol',
+			dateFormat: 'YYYY-MM-DD'
+		});
+
+		assert.ok(result, 'Should calculate with correct style');
+		assert.strictEqual(result, '  -$100.00');
+	});
+
+	test('calculateBalancingAmount - three postings with one missing', () => {
+		const transaction = {
+			headerLine: 0,
+			lines: [
+				'2025-10-22 * Test',
+				'    expenses:food    $30.00',
+				'    expenses:transport    $20.00',
+				'    assets:cash'
+			]
+		};
+
+		const result = calculateBalancingAmount(transaction, {
+			amountColumnPosition: 42,
+			amountAlignment: 'widest',
+			indentationWidth: 4,
+			negativeCommodityStyle: 'symbolBeforeSign',
+			dateFormat: 'YYYY-MM-DD'
+		});
+
+		assert.ok(result, 'Should calculate for multi-posting transaction');
+		assert.strictEqual(result, '  $-50.00');
+	});
+
+	test('calculateBalancingAmount - returns null when multiple postings missing', () => {
+		const transaction = {
+			headerLine: 0,
+			lines: [
+				'2025-10-22 * Test',
+				'    expenses:food    $30.00',
+				'    expenses:transport',
+				'    assets:cash'
+			]
+		};
+
+		const result = calculateBalancingAmount(transaction, {
+			amountColumnPosition: 42,
+			amountAlignment: 'widest',
+			indentationWidth: 4,
+			negativeCommodityStyle: 'symbolBeforeSign',
+			dateFormat: 'YYYY-MM-DD'
+		});
+
+		assert.strictEqual(result, null, 'Should return null when multiple postings are missing amounts');
+	});
+
+	test('calculateBalancingAmount - returns null when all postings have amounts', () => {
+		const transaction = {
+			headerLine: 0,
+			lines: [
+				'2025-10-22 * Test',
+				'    expenses:food    $30.00',
+				'    assets:cash    $-30.00'
+			]
+		};
+
+		const result = calculateBalancingAmount(transaction, {
+			amountColumnPosition: 42,
+			amountAlignment: 'widest',
+			indentationWidth: 4,
+			negativeCommodityStyle: 'symbolBeforeSign',
+			dateFormat: 'YYYY-MM-DD'
+		});
+
+		assert.strictEqual(result, null, 'Should return null when all postings have amounts');
+	});
+
+	test('calculateBalancingAmount - handles Euro currency', () => {
+		const transaction = {
+			headerLine: 0,
+			lines: [
+				'2025-10-22 * Test',
+				'    expenses:food    €45.50',
+				'    assets:cash'
+			]
+		};
+
+		const result = calculateBalancingAmount(transaction, {
+			amountColumnPosition: 42,
+			amountAlignment: 'widest',
+			indentationWidth: 4,
+			negativeCommodityStyle: 'symbolBeforeSign',
+			dateFormat: 'YYYY-MM-DD'
+		});
+
+		assert.ok(result, 'Should handle Euro currency');
+		assert.strictEqual(result, '  €-45.50');
+	});
 });

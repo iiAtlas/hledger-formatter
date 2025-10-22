@@ -364,7 +364,17 @@ export function activate(context: vscode.ExtensionContext) {
 		':' // Trigger on colon for hierarchical accounts
 	);
 
-	context.subscriptions.push(formatCommand, formatOnSaveDisposable, formatterProvider, rangeFormatterProvider, toggleCommentCommand, newFileCommand, sortCommand, accountCompletionProvider);
+	// Register inline completion provider for balancing amounts
+	const balancingAmountProvider = vscode.languages.registerInlineCompletionItemProvider(
+		[
+			{ scheme: 'file', pattern: '**/*.journal' },
+			{ scheme: 'file', pattern: '**/*.hledger' },
+			{ scheme: 'file', pattern: '**/*.ledger' }
+		],
+		new HledgerBalancingAmountProvider()
+	);
+
+	context.subscriptions.push(formatCommand, formatOnSaveDisposable, formatterProvider, rangeFormatterProvider, toggleCommentCommand, newFileCommand, sortCommand, accountCompletionProvider, balancingAmountProvider);
 }
 
 /**
@@ -1190,6 +1200,287 @@ class HledgerAccountCompletionProvider implements vscode.CompletionItemProvider 
 		}
 
 		return accounts;
+	}
+}
+
+/**
+ * Inline completion provider for balancing amounts
+ */
+class HledgerBalancingAmountProvider implements vscode.InlineCompletionItemProvider {
+	async provideInlineCompletionItems(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		context: vscode.InlineCompletionContext,
+		token: vscode.CancellationToken
+	): Promise<vscode.InlineCompletionItem[] | undefined> {
+		// Check if feature is enabled
+		const config = vscode.workspace.getConfiguration('hledger-formatter');
+		const enabled = config.get<boolean>('suggestBalancingAmounts', true);
+		if (!enabled) {
+			return undefined;
+		}
+
+		// Get the current line
+		const currentLine = document.lineAt(position.line);
+		const lineText = currentLine.text;
+		const trimmed = lineText.trim();
+
+		// Only provide suggestions for posting lines (lines that start with whitespace)
+		if (!/^\s+/.test(lineText)) {
+			return undefined;
+		}
+
+		// Don't suggest if line is a comment
+		if (trimmed.startsWith(';')) {
+			return undefined;
+		}
+
+		// Don't suggest if line already has an amount
+		// Check if there's already two spaces or a tab followed by a potential amount
+		const hasAmount = /\s{2,}|\t/.test(trimmed) && /[\d$€£¥-]/.test(trimmed.split(/\s{2,}|\t/)[1] || '');
+		if (hasAmount) {
+			return undefined;
+		}
+
+		// Parse the current transaction
+		const transaction = parseCurrentTransaction(document, position.line);
+		if (!transaction) {
+			return undefined;
+		}
+
+		// Get formatter options for amount formatting
+		const formatterOptions = getFormatterOptionsFromConfiguration(config);
+
+		// Calculate balancing amount
+		const balancingAmount = calculateBalancingAmount(transaction, formatterOptions);
+		if (!balancingAmount) {
+			return undefined;
+		}
+
+		// Create inline completion item
+		const item = new vscode.InlineCompletionItem(balancingAmount);
+		// Insert at the end of the current line text (after account name)
+		item.range = new vscode.Range(position, position);
+
+		return [item];
+	}
+}
+
+/**
+ * Parses the current transaction and returns transaction info
+ * @param document The text document
+ * @param currentLine The line number where cursor is positioned
+ * @returns Transaction info or null if not in a transaction
+ */
+function parseCurrentTransaction(document: vscode.TextDocument, currentLine: number): {
+	headerLine: number;
+	lines: string[];
+} | null {
+	const lines = document.getText().split('\n');
+
+	// Find the start of the transaction (look backwards for date line)
+	let headerLine = -1;
+	for (let i = currentLine; i >= 0; i--) {
+		const line = lines[i].trim();
+		if (isTransactionHeaderLine(line)) {
+			headerLine = i;
+			break;
+		}
+		// If we hit an empty line or another transaction, we're not in a transaction
+		if (line === '' && i < currentLine) {
+			return null;
+		}
+	}
+
+	if (headerLine === -1) {
+		return null;
+	}
+
+	// Find the end of the transaction (look forwards for empty line or next transaction)
+	let endLine = currentLine;
+	for (let i = currentLine + 1; i < lines.length; i++) {
+		const line = lines[i].trim();
+		if (line === '' || isTransactionHeaderLine(line)) {
+			endLine = i - 1;
+			break;
+		}
+		endLine = i;
+	}
+
+	// Extract transaction lines
+	const transactionLines = lines.slice(headerLine, endLine + 1);
+
+	return {
+		headerLine,
+		lines: transactionLines
+	};
+}
+
+/**
+ * Calculates the balancing amount for a transaction
+ * @param transaction Transaction info with lines
+ * @param options Formatter options for styling
+ * @returns Formatted balancing amount or null if cannot calculate
+ */
+export function calculateBalancingAmount(
+	transaction: { headerLine: number; lines: string[] },
+	options: FormatterOptions
+): string | null {
+	const postingLines = transaction.lines.slice(1); // Skip header
+
+	// Parse all postings
+	const postings: Array<{
+		line: string;
+		hasAmount: boolean;
+		amount: number | null;
+		currency: string | null;
+	}> = [];
+
+	for (const line of postingLines) {
+		const trimmed = line.trim();
+
+		// Skip empty lines and comments
+		if (!trimmed || trimmed.startsWith(';')) {
+			continue;
+		}
+
+		// Extract posting detail
+		const detail = extractPostingDetail(line);
+		if (!detail.account) {
+			continue;
+		}
+
+		if (detail.amount) {
+			// Parse amount
+			const parsed = parseAmount(detail.amount);
+			if (parsed) {
+				postings.push({
+					line,
+					hasAmount: true,
+					amount: parsed.value,
+					currency: parsed.currency
+				});
+			} else {
+				postings.push({
+					line,
+					hasAmount: false,
+					amount: null,
+					currency: null
+				});
+			}
+		} else {
+			postings.push({
+				line,
+				hasAmount: false,
+				amount: null,
+				currency: null
+			});
+		}
+	}
+
+	// Only suggest if exactly one posting is missing an amount
+	const postingsWithoutAmount = postings.filter(p => !p.hasAmount);
+	if (postingsWithoutAmount.length !== 1) {
+		return null;
+	}
+
+	// Calculate sum of all amounts (should balance to zero)
+	const amountsByCurrency = new Map<string, number>();
+	for (const posting of postings) {
+		if (posting.hasAmount && posting.amount !== null && posting.currency !== null) {
+			const current = amountsByCurrency.get(posting.currency) || 0;
+			amountsByCurrency.set(posting.currency, current + posting.amount);
+		}
+	}
+
+	// Only support single currency for now
+	if (amountsByCurrency.size !== 1) {
+		return null;
+	}
+
+	const [currency, sum] = Array.from(amountsByCurrency.entries())[0];
+	const balancingValue = -sum;
+
+	// Format the amount
+	const formattedAmount = formatAmountValue(balancingValue, currency, options.negativeCommodityStyle);
+
+	// Add spacing before the amount (at least 2 spaces)
+	return `  ${formattedAmount}`;
+}
+
+/**
+ * Parses an amount string and extracts value and currency
+ * @param amountStr Amount string (e.g., "$100.50", "-$50.00", "100.50 USD")
+ * @returns Parsed amount or null if invalid
+ */
+export function parseAmount(amountStr: string): { value: number; currency: string } | null {
+	const trimmed = amountStr.trim();
+
+	// Try to match currency symbol patterns: $100, -$100, $-100
+	const currencySymbolMatch = trimmed.match(/^(-)?(\$|€|£|¥)(-)?(\d+(?:,\d+)*(?:\.\d+)?)(.*)$/);
+	if (currencySymbolMatch) {
+		const sign1 = currencySymbolMatch[1] || '';
+		const currency = currencySymbolMatch[2];
+		const sign2 = currencySymbolMatch[3] || '';
+		const numericPart = currencySymbolMatch[4];
+
+		// Determine sign
+		const isNegative = sign1 === '-' || sign2 === '-';
+
+		// Parse numeric value (remove commas)
+		const value = parseFloat(numericPart.replace(/,/g, ''));
+		if (isNaN(value)) {
+			return null;
+		}
+
+		return {
+			value: isNegative ? -value : value,
+			currency
+		};
+	}
+
+	// Try to match plain number with optional currency code: 100.50 USD
+	const plainNumberMatch = trimmed.match(/^(-)?(\d+(?:,\d+)*(?:\.\d+)?)\s*([A-Z]{3})?$/);
+	if (plainNumberMatch) {
+		const isNegative = plainNumberMatch[1] === '-';
+		const numericPart = plainNumberMatch[2];
+		const currencyCode = plainNumberMatch[3] || '$'; // Default to $
+
+		const value = parseFloat(numericPart.replace(/,/g, ''));
+		if (isNaN(value)) {
+			return null;
+		}
+
+		return {
+			value: isNegative ? -value : value,
+			currency: currencyCode
+		};
+	}
+
+	return null;
+}
+
+/**
+ * Formats an amount value with currency
+ * @param value Numeric value
+ * @param currency Currency symbol or code
+ * @param style Negative commodity style
+ * @returns Formatted amount string
+ */
+export function formatAmountValue(value: number, currency: string, style: NegativeCommodityStyle): string {
+	const absValue = Math.abs(value);
+	const isNegative = value < 0;
+
+	// Format number with 2 decimal places and commas
+	const formattedNumber = absValue.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+	// Apply currency and sign based on style
+	if (style === 'signBeforeSymbol') {
+		// -$100.00
+		return isNegative ? `-${currency}${formattedNumber}` : `${currency}${formattedNumber}`;
+	} else {
+		// $-100.00 or $100.00
+		return isNegative ? `${currency}-${formattedNumber}` : `${currency}${formattedNumber}`;
 	}
 }
 
