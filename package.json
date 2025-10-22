@@ -3,7 +3,7 @@
   "displayName": "HLedger Formatter",
   "publisher": "iiatlas",
   "description": "Make plain text accounting fun! Aligns amounts, sorts entries, and provides syntax highlighting for HLedger journal files.",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "icon": "images/icon.png",
   "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://github.com/iiAtlas/hledger-formatter/blob/main/README.md",
@@ -226,15 +226,15 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
-    "@types/node": "^20.19.17",
+    "@types/node": "^20.19.23",
     "@types/vscode": "1.92.0",
-    "@typescript-eslint/eslint-plugin": "^8.44.1",
-    "@typescript-eslint/parser": "^8.44.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.5.2",
-    "@vscode/vsce": "^3.6.1",
-    "eslint": "^9.36.0",
-    "typescript": "^5.9.2",
+    "@vscode/vsce": "^3.6.2",
+    "eslint": "^9.38.0",
+    "typescript": "^5.9.3",
     "vsce": "^2.15.0"
   }
 }

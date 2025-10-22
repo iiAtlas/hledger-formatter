@@ -2,7 +2,7 @@
 
 All notable changes to the "hledger-formatter" extension will be documented in this file.
 
-## [Unreleased]
+## [1.1.0]
 
 ### Added
 - Added balencing suggestions
