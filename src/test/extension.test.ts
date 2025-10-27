@@ -897,6 +897,62 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(result, null, 'Should return null for invalid format');
 	});
 
+	test('parseAmount - simple commodity name', () => {
+		const result = parseAmount('USD 0.5');
+		assert.ok(result, 'Should parse simple commodity name');
+		assert.strictEqual(result?.value, 0.5);
+		assert.strictEqual(result?.currency, 'USD');
+	});
+
+	test('parseAmount - negative before simple commodity name', () => {
+		const result = parseAmount('-USD 50.25');
+		assert.ok(result, 'Should parse negative with arbitrary commodity name');
+		assert.strictEqual(result?.value, -50.25);
+		assert.strictEqual(result?.currency, 'USD');
+	});
+
+	test('parseAmount - quoted commodity name', () => {
+		const result = parseAmount('"US Dollar" 100.00');
+		assert.ok(result, 'Should parse quoted commodity name');
+		assert.strictEqual(result?.value, 100.00);
+		assert.strictEqual(result?.currency, '"US Dollar"');
+	});
+
+	test('parseAmount - negative sign before quoted commodity name', () => {
+		const result = parseAmount('-"US Dollar" 100.00');
+		assert.ok(result, 'Should parse negative sign before quoted commodity name');
+		assert.strictEqual(result?.value, -100.00);
+		assert.strictEqual(result?.currency, '"US Dollar"');
+	});
+
+	test('parseAmount - number before simple commodity name', () => {
+		const result = parseAmount('100.50 USD');
+		assert.ok(result, 'Should parse number before commodity name');
+		assert.strictEqual(result?.value, 100.50);
+		assert.strictEqual(result?.currency, 'USD');
+	});
+
+	test('parseAmount - negative number before simple commodity name', () => {
+		const result = parseAmount('-100.50 USD');
+		assert.ok(result, 'Should parse negative number before commodity name');
+		assert.strictEqual(result?.value, -100.50);
+		assert.strictEqual(result?.currency, 'USD');
+	});
+
+	test('parseAmount - number before quoted commodity name', () => {
+		const result = parseAmount('100.00 "US Dollar"');
+		assert.ok(result, 'Should parse number before quoted commodity name');
+		assert.strictEqual(result?.value, 100.00);
+		assert.strictEqual(result?.currency, '"US Dollar"');
+	});
+
+	test('parseAmount - negative number before quoted commodity name', () => {
+		const result = parseAmount('-100.00 "US Dollar"');
+		assert.ok(result, 'Should parse negative number before quoted commodity name');
+		assert.strictEqual(result?.value, -100.00);
+		assert.strictEqual(result?.currency, '"US Dollar"');
+	});
+
 	test('formatAmountValue - positive with symbolBeforeSign', () => {
 		const result = formatAmountValue(100.50, '$', 'symbolBeforeSign');
 		assert.strictEqual(result, '$100.50');
@@ -915,6 +971,16 @@ suite('Hledger Formatter Tests', () => {
 	test('formatAmountValue - large amount with commas', () => {
 		const result = formatAmountValue(1234.56, '$', 'symbolBeforeSign');
 		assert.strictEqual(result, '$1,234.56');
+	});
+
+	test('formatAmountValue - simple commodity name', () => {
+		const result = formatAmountValue(100.50, 'USD', 'symbolBeforeSign');
+		assert.strictEqual(result, 'USD100.50');
+	});
+
+	test('formatAmountValue - quoted commodity name', () => {
+		const result = formatAmountValue(100.50, '"US Dollar"', 'symbolBeforeSign');
+		assert.strictEqual(result, '"US Dollar"100.50');
 	});
 
 	test('calculateBalancingAmount - simple two posting transaction', () => {

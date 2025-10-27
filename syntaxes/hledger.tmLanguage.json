@@ -186,20 +186,20 @@
     "amount": {
       "patterns": [
         {
-          "name": "constant.numeric.currency.hledger",
-          "match": "[-]?\\$[-]?[0-9]+(?:[.,][0-9]+)?",
+          "name": "constant.numeric.amount.hledger",
+          "match": "[-]?(\"[^;\"]+\"|[^\\d\\-+.@*;\\t \"{}=]+)\\s*[-]?[0-9]+(?:[.,][0-9]+)?",
           "captures": {
-            "0": {
-              "name": "constant.numeric.amount.hledger"
+            "1": {
+              "name": "constant.numeric.commodity.hledger"
             }
           }
         },
         {
           "name": "constant.numeric.amount.hledger",
-          "match": "[-]?[0-9]+(?:[.,][0-9]+)?(?:\\s+[A-Z]{3,})?",
+          "match": "[-]?[0-9]+(?:[.,][0-9]+)?(?:\\s*(\"[^;\"]+\"|[^\\d\\-+.@*;\\t \"{}=]+))?",
           "captures": {
-            "0": {
-              "name": "constant.numeric.amount.hledger"
+            "1": {
+              "name": "constant.numeric.commodity.hledger"
             }
           }
         }

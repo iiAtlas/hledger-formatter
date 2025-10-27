@@ -1652,6 +1652,15 @@ function findDigitsColumnInLine(line: string, startIndex: number): number | null
 	return null;
 }
 
+function parseNumber(numStr: string): number {
+	// Handle European format with comma as decimal separator
+	if (numStr.includes(',') && !numStr.includes('.')) {
+		return parseFloat(numStr.replace(',', '.'));
+	}
+
+	return parseFloat(numStr.replace(/,/g, ''));
+}
+
 /**
  * Parses an amount string and extracts value and currency
  * @param amountStr Amount string (e.g., "$100.50", "-$50.00", "100.50 USD")
@@ -1660,19 +1669,19 @@ function findDigitsColumnInLine(line: string, startIndex: number): number | null
 export function parseAmount(amountStr: string): { value: number; currency: string } | null {
 	const trimmed = amountStr.trim();
 
-	// Try to match currency symbol patterns: $100, -$100, $-100
-	const currencySymbolMatch = trimmed.match(/^(-)?(\$|€|£|¥)(-)?(\d+(?:,\d+)*(?:\.\d+)?)(.*)$/);
-	if (currencySymbolMatch) {
-		const sign1 = currencySymbolMatch[1] || '';
-		const currency = currencySymbolMatch[2];
-		const sign2 = currencySymbolMatch[3] || '';
-		const numericPart = currencySymbolMatch[4];
+	// Try to match currency before number: $100, -$100, $-100, "US Dollar" 100, USD 100
+	const currencyFirstMatch = trimmed.match(/^(-)?("[^"]+"|[^\d\-+.@*;\t "{}=]+)\s*(-)?(\d+(?:,\d+)*(?:\.\d+)?)(.*)$/);
+	if (currencyFirstMatch) {
+		const sign1 = currencyFirstMatch[1];
+		const currency = currencyFirstMatch[2];
+		const sign2 = currencyFirstMatch[3];
+		const numericPart = currencyFirstMatch[4];
 
 		// Determine sign
 		const isNegative = sign1 === '-' || sign2 === '-';
 
 		// Parse numeric value (remove commas)
-		const value = parseFloat(numericPart.replace(/,/g, ''));
+		const value = parseNumber(numericPart);
 		if (isNaN(value)) {
 			return null;
 		}
@@ -1683,21 +1692,23 @@ export function parseAmount(amountStr: string): { value: number; currency: strin
 		};
 	}
 
-	// Try to match plain number with optional currency code: 100.50 USD
-	const plainNumberMatch = trimmed.match(/^(-)?(\d+(?:,\d+)*(?:\.\d+)?)\s*([A-Z]{3})?$/);
-	if (plainNumberMatch) {
-		const isNegative = plainNumberMatch[1] === '-';
-		const numericPart = plainNumberMatch[2];
-		const currencyCode = plainNumberMatch[3] || '$'; // Default to $
+	// Try to match plain number before currency: 100.50 USD, -100.50 "US Dollar", 100 €
+	const numberFirstMatch = trimmed.match(/^(-)?(\d+(?:,\d+)*(?:\.\d+)?)\s*("[^"]+"|[^\d\-+.@*;\t "{}=]+)?$/);
+	if (numberFirstMatch) {
+		const isNegative = numberFirstMatch[1] === '-';
+		const numericPart = numberFirstMatch[2];
+		const quotedCurrency = numberFirstMatch[3];
+		const unquotedCurrency = numberFirstMatch[4];
+		const currency = quotedCurrency || unquotedCurrency || '$'; // Default to $
 
-		const value = parseFloat(numericPart.replace(/,/g, ''));
+		const value = parseNumber(numericPart);
 		if (isNaN(value)) {
 			return null;
 		}
 
 		return {
 			value: isNegative ? -value : value,
-			currency: currencyCode
+			currency
 		};
 	}
 
