@@ -151,24 +151,17 @@
         },
         {
           "name": "meta.posting.hledger",
-          "match": "^\\s+(([^:;#*\\s]+)(?::([^:;#*\\s]+)(?::([^:;#*\\s]+)(?::([^:;#*\\s]+)(?::([^:;#*\\s]+))?)?)?)?(?:\\s+([^;#*]+))?(\\s*[;#*].*)?$)",
+          "match": "^\\s+(([^;#*\\s]+)(?:\\s+([^;#*]+))?(\\s*[;#*].*)?$)",
           "captures": {
             "2": {
-              "name": "entity.name.tag.account.level1.hledger"
+              "name": "meta.account.hledger",
+              "patterns": [
+                {
+                  "include": "#account"
+                }
+              ]
             },
             "3": {
-              "name": "entity.name.function.account.level2.hledger"
-            },
-            "4": {
-              "name": "variable.parameter.account.level3.hledger"
-            },
-            "5": {
-              "name": "storage.type.account.level4.hledger"
-            },
-            "6": {
-              "name": "keyword.control.account.level5.hledger"
-            },
-            "7": {
               "name": "meta.amount.hledger",
               "patterns": [
                 {
@@ -176,8 +169,33 @@
                 }
               ]
             },
-            "8": {
+            "4": {
               "name": "comment.line.inline.hledger"
+            }
+          }
+        }
+      ]
+    },
+    "account": {
+      "name": "meta.account.hledger",
+      "patterns": [
+        {
+          "match": "(?:([^:]+):?)?(?:([^:]+):?)?(?:([^:]+):?)?(?:([^:]+):?)?(?:([^:]+):?)?",
+          "captures": {
+            "1": {
+              "name": "entity.name.tag.account.level1.hledger"
+            },
+            "2": {
+              "name": "entity.name.function.account.level2.hledger"
+            },
+            "3": {
+              "name": "variable.parameter.account.level3.hledger"
+            },
+            "4": {
+              "name": "storage.type.account.level4.hledger"
+            },
+            "5": {
+              "name": "keyword.control.account.level5.hledger"
             }
           }
         }
