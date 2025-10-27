@@ -2,6 +2,10 @@
 
 All notable changes to the "hledger-formatter" extension will be documented in this file.
 
+## [1.1.1]
+- Support syntax-highlighting for arbitrary depth accounts (thank you @EthanOlpin)
+- Support all valid commodity formats (again, thank you @EthanOlpin!)
+
 ## [1.1.0]
 
 ### Added
