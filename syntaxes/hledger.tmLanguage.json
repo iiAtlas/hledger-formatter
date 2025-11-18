@@ -151,22 +151,18 @@
         },
         {
           "name": "meta.posting.hledger",
-          "match": "^\\s+(([^;#*\\s]+)(?:\\s+([^;#*]+))?(\\s*[;#*].*)?$)",
+          "match": "^\\s+(([^;#*]+?)\\s{2,}([\\S\\s]+?)(?:\\s+([;#*].*))?$)",
           "captures": {
             "2": {
               "name": "meta.account.hledger",
               "patterns": [
-                {
-                  "include": "#account"
-                }
+                { "include": "#account" }
               ]
             },
             "3": {
               "name": "meta.amount.hledger",
               "patterns": [
-                {
-                  "include": "#amount"
-                }
+                { "include": "#amount" }
               ]
             },
             "4": {
@@ -180,23 +176,13 @@
       "name": "meta.account.hledger",
       "patterns": [
         {
-          "match": "(?:([^:]+):?)?(?:([^:]+):?)?(?:([^:]+):?)?(?:([^:]+):?)?(?:([^:]+):?)?",
+          "match": "(?:(?!.* {2})([^\\s:;#*\"{}=]+(?: [^\\s:;#*\"{}=]+)*)\\:)?(?:(?!.* {2})([^\\s:;#*\"{}=]+(?: [^\\s:;#*\"{}=]+)*)\\:)?(?:(?!.* {2})([^\\s:;#*\"{}=]+(?: [^\\s:;#*\"{}=]+)*)\\:)?(?:(?!.* {2})([^\\s:;#*\"{}=]+(?: [^\\s:;#*\"{}=]+)*)\\:)?(?:(?!.* {2})([^\\s:;#*\"{}=]+(?: [^\\s:;#*\"{}=]+)*))?",
           "captures": {
-            "1": {
-              "name": "entity.name.tag.account.level1.hledger"
-            },
-            "2": {
-              "name": "entity.name.function.account.level2.hledger"
-            },
-            "3": {
-              "name": "variable.parameter.account.level3.hledger"
-            },
-            "4": {
-              "name": "storage.type.account.level4.hledger"
-            },
-            "5": {
-              "name": "keyword.control.account.level5.hledger"
-            }
+            "1": { "name": "entity.name.tag.account.level1.hledger" },
+            "2": { "name": "entity.name.function.account.level2.hledger" },
+            "3": { "name": "variable.parameter.account.level3.hledger" },
+            "4": { "name": "storage.type.account.level4.hledger" },
+            "5": { "name": "keyword.control.account.level5.hledger" }
           }
         }
       ]
@@ -205,20 +191,30 @@
       "patterns": [
         {
           "name": "constant.numeric.amount.hledger",
-          "match": "[-]?(\"[^;\"]+\"|[^\\d\\-+.@*;\\t \"{}=]+)\\s*[-]?[0-9]+(?:[.,][0-9]+)?",
+          "match": "(?:([+-]?)\\s*)?(\"[^;\n\"]+\"|[^0-9+\\-@*;\\t\\n \"{}=]+)(?:\\s*([+-]?))?\\s*((?:\\d{1,2}(?:,\\d{2})+(?:,\\d{3})*|\\d{1,3}(?:,\\d{3})+|\\d+)(?:[.,]\\d*)?(?:[eE][+-]?\\d+)?)(?:\\s*(@{1,2})\\s*(?:([+-]?)\\s*)?(\"[^;\n\"]+\"|[^0-9+\\-@*;\\t\\n \"{}=]+)(?:\\s*([+-]?))?\\s*((?:\\d{1,2}(?:,\\d{2})+(?:,\\d{3})*|\\d{1,3}(?:,\\d{3})+|\\d+)(?:[.,]\\d*)?(?:[eE][+-]?\\d+)?))?",
           "captures": {
-            "1": {
-              "name": "constant.numeric.commodity.hledger"
-            }
+            "1": { "name": "keyword.operator.sign.hledger" },
+            "2": { "name": "constant.numeric.commodity.hledger" },
+            "3": { "name": "keyword.operator.sign.hledger" },
+            "4": { "name": "constant.numeric.amount.hledger" },
+            "5": { "name": "keyword.operator.cost.hledger" },
+            "6": { "name": "keyword.operator.sign.hledger" },
+            "7": { "name": "constant.numeric.commodity.cost.hledger" },
+            "8": { "name": "keyword.operator.sign.hledger" },
+            "9": { "name": "constant.numeric.amount.cost.hledger" }
           }
         },
         {
           "name": "constant.numeric.amount.hledger",
-          "match": "[-]?[0-9]+(?:[.,][0-9]+)?(?:\\s*(\"[^;\"]+\"|[^\\d\\-+.@*;\\t \"{}=]+))?",
+          "match": "(?:([+-]?)\\s+)?((?:\\d{1,2}(?:,\\d{2})+(?:,\\d{3})*|\\d{1,3}(?:,\\d{3})+|\\d+)(?:[.,]\\d*)?(?:[eE][+-]?\\d+)?)\\s*(\"[^;\n\"]+\"|[^0-9+\\-@*;\\t\\n \"{}=]+)?(?:\\s*(@{1,2})\\s*(?:([+-]?)\\s+)?((?:\\d{1,2}(?:,\\d{2})+(?:,\\d{3})*|\\d{1,3}(?:,\\d{3})+|\\d+)(?:[.,]\\d*)?(?:[eE][+-]?\\d+)?)\\s*(\"[^;\n\"]+\"|[^0-9+\\-@*;\\t\\n \"{}=]+))?",
           "captures": {
-            "1": {
-              "name": "constant.numeric.commodity.hledger"
-            }
+            "1": { "name": "keyword.operator.sign.hledger" },
+            "2": { "name": "constant.numeric.amount.hledger" },
+            "3": { "name": "constant.numeric.commodity.hledger" },
+            "4": { "name": "keyword.operator.cost.hledger" },
+            "5": { "name": "keyword.operator.sign.hledger" },
+            "6": { "name": "constant.numeric.amount.cost.hledger" },
+            "7": { "name": "constant.numeric.commodity.cost.hledger" }
           }
         }
       ]
