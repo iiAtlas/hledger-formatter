@@ -151,7 +151,7 @@
         },
         {
           "name": "meta.posting.hledger",
-          "match": "^\\s+(([^;#*]+?)\\s{2,}([\\S\\s]+?)(?:\\s+([;#*].*))?$)",
+          "match": "^\\s+(([^;#*]+?)(?:\\s{2,}([\\S\\s]+?))?(?:\\s+([;#*].*))?)$",
           "captures": {
             "2": {
               "name": "meta.account.hledger",
