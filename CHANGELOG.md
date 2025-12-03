@@ -2,6 +2,9 @@
 
 All notable changes to the "hledger-formatter" extension will be documented in this file.
 
+## [1.1.2]
+- Improved syntax highlighting for account name and amount to match Hledger (thank you @rainyrainyday!)
+
 ## [1.1.1]
 - Support syntax-highlighting for arbitrary depth accounts (thank you @EthanOlpin)
 - Support all valid commodity formats (again, thank you @EthanOlpin!)
