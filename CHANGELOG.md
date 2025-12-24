@@ -2,6 +2,9 @@
 
 All notable changes to the "hledger-formatter" extension will be documented in this file.
 
+## [1.1.3]
+- Fixed accepting an autocomplete suggestion not replacing the current content
+
 ## [1.1.2]
 - Improved syntax highlighting for account name and amount to match Hledger (thank you @rainyrainyday!)
 
