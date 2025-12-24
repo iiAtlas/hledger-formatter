@@ -1117,6 +1117,9 @@ class HledgerAccountCompletionProvider implements vscode.CompletionItemProvider 
 				const item = new vscode.CompletionItem(account, vscode.CompletionItemKind.Field);
 				item.detail = 'Standard account category';
 				item.sortText = `0_${account}`; // Sort standard accounts first
+				if (wordRange) {
+					item.range = wordRange;
+				}
 				completionItems.push(item);
 
 				// Track lowercase version for deduplication
@@ -1134,6 +1137,9 @@ class HledgerAccountCompletionProvider implements vscode.CompletionItemProvider 
 			const item = new vscode.CompletionItem(account, vscode.CompletionItemKind.Field);
 			item.detail = 'Existing account';
 			item.sortText = `1_${account}`; // Sort existing accounts after standard ones
+			if (wordRange) {
+				item.range = wordRange;
+			}
 			completionItems.push(item);
 		}
 
