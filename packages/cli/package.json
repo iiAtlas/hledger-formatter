@@ -33,6 +33,7 @@
   },
   "scripts": {
     "build": "node esbuild.mjs",
+    "test": "vitest run",
     "npm:publish": "npm publish --access public"
   },
   "dependencies": {
@@ -40,6 +41,7 @@
   },
   "devDependencies": {
     "@hledger-fmt/formatter": "*",
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.25.0",
+    "vitest": "^4.0.18"
   }
 }
