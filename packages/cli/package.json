@@ -34,6 +34,7 @@
   "scripts": {
     "build": "node esbuild.mjs",
     "test": "vitest run",
+    "npm:pack": "npm pack --dry-run",
     "npm:publish": "npm publish --access public"
   },
   "dependencies": {
