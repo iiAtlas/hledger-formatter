@@ -1,0 +1,45 @@
+{
+  "name": "@iiatlas/hledger-fmt",
+  "version": "1.1.3",
+  "description": "Format and sort hledger journal files",
+  "keywords": [
+    "hledger",
+    "formatter",
+    "accounting",
+    "ledger",
+    "plain-text-accounting",
+    "journal"
+  ],
+  "homepage": "https://github.com/iiAtlas/hledger-formatter/tree/main/packages/cli#readme",
+  "bugs": {
+    "url": "https://github.com/iiAtlas/hledger-formatter/issues"
+  },
+  "author": "Atlas Wegman",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iiAtlas/hledger-formatter.git",
+    "directory": "packages/cli"
+  },
+  "bin": {
+    "hledger-fmt": "./bin/hledger-fmt.js"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "npm:publish": "npm publish --access public"
+  },
+  "dependencies": {
+    "commander": "^14.0.3"
+  },
+  "devDependencies": {
+    "@hledger-fmt/formatter": "*",
+    "esbuild": "^0.25.0"
+  }
+}
