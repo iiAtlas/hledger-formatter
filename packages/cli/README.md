@@ -6,7 +6,7 @@ A CLI formatter for your [hledger](https://hledger.org/) journals.
 
 `hledger-fmt` keeps journal files consistent by formatting postings, normalizing transaction headers, and sorting transactions by date when needed.
 
-![npm](https://img.shields.io/npm/v/%40iiatlas%2Fhledger-fmt) ![license](https://img.shields.io/npm/l/%40iiatlas%2Fhledger-fmt) ![node](https://img.shields.io/node/v/%40iiatlas%2Fhledger-fmt)
+![npm](https://img.shields.io/npm/v/%40iiatlas%2Fhledger-fmt) ![license](https://img.shields.io/github/license/iiAtlas/hledger-formatter) ![node](https://img.shields.io/node/v/%40iiatlas%2Fhledger-fmt)
 
 ## Features
 
