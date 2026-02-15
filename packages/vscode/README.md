@@ -1,4 +1,4 @@
-![HLedger Formatter Banner](images/banner.jpg)
+![HLedger Formatter Banner](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/banner.jpg)
 
 # HLedger Formatter
 
@@ -22,27 +22,29 @@ A VS Code extension to make editing hledger journal files a bit more fun.
 - Create new monthly journal files (`Cmd+N`)
 - Matches HLedger defaults, but highly configurable to your preference (See VSCode settings under "HLedger")
 
+Looking for a CLI tool to do the above? Check out hledger-fmt!
+
 ## Demo
 
 ### Syntax Highlighting ([details](SYNTAX_HIGHLIGHTING.md))
 Rich syntax highlighting with hierarchical account coloring and project tags:
 
-![Syntax Demo](images/syntax-demo.gif)
+![Syntax Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/syntax-demo.gif)
 
 ### Automatic Formatting
 Aligns amounts to a configurable column position for clean, readable journal files:
 
-![Format Demo](images/format-demo.gif)
+![Format Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/format-demo.gif)
 
 ### Sort by Date
 Automatically sorts transactions chronologically:
 
-![Sort Demo](images/sort-demo.gif)
+![Sort Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/sort-demo.gif)
 
 ### Autocomplete / Balancing Suggestions
 Intelligent suggestions for both the standard categories and your own, and a suggestion for balancing amounts.  For more info see [AUTOCOMPLETE.md](AUTCOMPLETE.md).
 
-![Autocomplete Demo](images/autocomplete-demo.gif)
+![Autocomplete Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/autocomplete-demo.gif)
 
 
 ## Supported File Types
@@ -119,7 +121,7 @@ See [CHANGELOG.md](CHANGELOG.md) for a full list of changes in each release.
 
 ## Contributing
 
-This is an open source project and contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed information on:
+This is an open source project and contributions are welcome! See [CONTRIBUTING.md](https://github.com/iiAtlas/hledger-formatter/blob/main/CONTRIBUTING.md) for detailed information on:
 - Setting up your development environment
 - Running tests and building the extension
 - Submitting pull requests
@@ -133,9 +135,11 @@ Feel free to:
 
 In addition to the VSCode Marketplace, this package is also available on the OpenVSX Registry: [iiatlas/hledger-formatter](https://open-vsx.org/extension/iiatlas/hledger-formatter).
 
+If you are looking for a CLI equivalent, check out hledger-fmt.
+
 ## Support
 
-For help and support, see [SUPPORT.md](SUPPORT.md)
+For help and support, see [SUPPORT.md](https://github.com/iiAtlas/hledger-formatter/blob/main/SUPPORT.md)
 
 - **Issues & Bug Reports**: [GitHub Issues](https://github.com/iiAtlas/hledger-formatter/issues)
 - **Source Code**: [GitHub Repository](https://github.com/iiAtlas/hledger-formatter)

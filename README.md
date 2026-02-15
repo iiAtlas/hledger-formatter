@@ -1,4 +1,4 @@
-![HLedger Formatter Banner](images/banner.jpg)
+![HLedger Formatter Banner](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/banner.jpg)
 
 # HLedger Formatter
 
@@ -27,22 +27,22 @@ A VS Code extension to make editing hledger journal files a bit more fun.
 ### Syntax Highlighting ([details](SYNTAX_HIGHLIGHTING.md))
 Rich syntax highlighting with hierarchical account coloring and project tags:
 
-![Syntax Demo](images/syntax-demo.gif)
+![Syntax Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/syntax-demo.gif)
 
 ### Automatic Formatting
 Aligns amounts to a configurable column position for clean, readable journal files:
 
-![Format Demo](images/format-demo.gif)
+![Format Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/format-demo.gif)
 
 ### Sort by Date
 Automatically sorts transactions chronologically:
 
-![Sort Demo](images/sort-demo.gif)
+![Sort Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/sort-demo.gif)
 
 ### Autocomplete / Balancing Suggestions
 Intelligent suggestions for both the standard categories and your own, and a suggestion for balancing amounts.  For more info see [AUTOCOMPLETE.md](AUTCOMPLETE.md).
 
-![Autocomplete Demo](images/autocomplete-demo.gif)
+![Autocomplete Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/autocomplete-demo.gif)
 
 
 ## Supported File Types
