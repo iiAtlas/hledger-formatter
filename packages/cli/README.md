@@ -31,6 +31,8 @@ Looking for a VSCode extension to do this automatically? Check out [hledger-form
 
 ## Install
 
+View on NPM: https://www.npmjs.com/package/@iiatlas/hledger-fmt
+
 ```bash
 npm install -g @iiatlas/hledger-fmt
 ```
