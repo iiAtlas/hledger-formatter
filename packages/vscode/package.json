@@ -221,7 +221,7 @@
     "vscode:prepublish": "npm run prebuild && node esbuild.mjs --production",
     "vsce:package": "npx vsce package --no-dependencies",
     "vsce:publish": "npx vsce publish --no-dependencies",
-    "ovsx:publish": "npx ovsx publish -p OVSX_TOKEN_GOES_HERE_BUT_DONT_COMMIT_IT"
+    "ovsx:publish": "npx ovsx publish --no-dependencies -p OVSX_TOKEN_GOES_HERE"
   },
   "devDependencies": {
     "@hledger-fmt/formatter": "*",
