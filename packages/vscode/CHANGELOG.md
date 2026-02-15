@@ -2,6 +2,10 @@
 
 All notable changes to the "hledger-formatter" extension will be documented in this file.
 
+## [2.0.1]
+
+- Tweaks to the README's, fixing broken links
+
 ## [2.0.0]
 - Released standalone [hledger-fmt](../cli/README.md) CLI tool as NPM package
 - Seperated `formatter` to its own private package

@@ -1,6 +1,6 @@
 {
   "name": "@hledger-fmt/formatter",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": true,
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
