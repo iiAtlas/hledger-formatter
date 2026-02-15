@@ -32,8 +32,10 @@
     "node": ">=18.0.0"
   },
   "scripts": {
+    "prebuild": "npm --prefix ../formatter run build",
     "build": "node esbuild.mjs",
-    "test": "vitest run",
+    "test": "npm run build && vitest run",
+    "prepack": "npm run build",
     "npm:pack": "npm pack --dry-run",
     "npm:publish": "npm publish --access public"
   },

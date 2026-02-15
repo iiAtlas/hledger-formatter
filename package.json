@@ -8,10 +8,10 @@
   ],
   "scripts": {
     "build": "npm -w @hledger-fmt/formatter run build && npm -w @iiatlas/hledger-fmt run build && npm -w hledger-formatter run build",
-    "test": "npm -w @hledger-fmt/formatter run test && npm -w @iiatlas/hledger-fmt run test",
+    "test": "npm -w @hledger-fmt/formatter run test && npm -w @iiatlas/hledger-fmt run test && npm -w hledger-formatter run vscode:prepublish",
     "lint": "eslint packages/*/src",
     "watch": "npm -w hledger-formatter run watch",
-    "clean": "rm -rf packages/formatter/out packages/cli/dist packages/vscode/dist"
+    "clean": "rm -rf packages/formatter/out packages/formatter/tsconfig.tsbuildinfo packages/cli/dist packages/vscode/dist"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.48.1",

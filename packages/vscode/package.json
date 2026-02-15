@@ -214,9 +214,11 @@
     }
   },
   "scripts": {
+    "prebuild": "npm --prefix ../formatter run build",
+    "prewatch": "npm run prebuild",
     "build": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
-    "vscode:prepublish": "node esbuild.mjs --production",
+    "vscode:prepublish": "npm run prebuild && node esbuild.mjs --production",
     "vsce:package": "npx vsce package --no-dependencies",
     "vsce:publish": "npx vsce publish --no-dependencies",
     "ovsx:publish": "npx ovsx publish -p OVSX_TOKEN_GOES_HERE_BUT_DONT_COMMIT_IT"
