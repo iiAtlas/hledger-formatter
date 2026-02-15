@@ -8,6 +8,8 @@ A VS Code extension to make editing hledger journal files a bit more fun.
 
 ![GitHub Release](https://img.shields.io/github/v/release/iiatlas/hledger-formatter) ![GitHub License](https://img.shields.io/github/license/iiatlas/hledger-formatter) ![Static Badge](https://img.shields.io/badge/VS%20Code-Ready-2BABF3) ![Static Badge](https://img.shields.io/badge/Open%20VSX-Ready-A60EE5) 
 
+Looking for the CLI tool?  Check out: [hledger-fmt](packages/cli/README.md).
+
 
 ## Features
 
@@ -132,6 +134,8 @@ Feel free to:
 ## Other Distributions
 
 In addition to the VSCode Marketplace, this package is also available on the OpenVSX Registry: [iiatlas/hledger-formatter](https://open-vsx.org/extension/iiatlas/hledger-formatter).
+
+This package is also available as a CLI tool published on NPM. [hledger-fmt](packages/cli/README.md).
 
 ## Support
 
