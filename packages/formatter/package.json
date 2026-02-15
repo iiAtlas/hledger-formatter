@@ -1,0 +1,15 @@
+{
+  "name": "@hledger-fmt/formatter",
+  "version": "2.0.0",
+  "private": true,
+  "main": "./out/index.js",
+  "types": "./out/index.d.ts",
+  "scripts": {
+    "build": "tsc -b tsconfig.json --force",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.25",
+    "vitest": "^4.0.18"
+  }
+}

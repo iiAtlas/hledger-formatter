@@ -1,8 +1,14 @@
 out
 dist
 node_modules
+*.tsbuildinfo
 .vscode-test/
 *.vsix
 .env
 .DS_Store
 coverage/
+*.tgz
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*

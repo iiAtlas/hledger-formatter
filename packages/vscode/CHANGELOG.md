@@ -2,6 +2,10 @@
 
 All notable changes to the "hledger-formatter" extension will be documented in this file.
 
+## [2.0.0]
+- Released standalone [hledger-fmt](../cli/README.md) CLI tool as NPM package
+- Seperated `formatter` to its own private package
+
 ## [1.1.3]
 - Fixed accepting an autocomplete suggestion not replacing the current content
 

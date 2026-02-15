@@ -1,23 +1,19 @@
+import { describe, it } from 'vitest';
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as vscode from 'vscode';
 
-// Import the formatter, comment, and sort functions directly for testing
-import { formatHledgerJournal, toggleCommentLines, sortHledgerJournal, parseAmount, formatAmountValue, calculateBalancingAmount } from '../extension';
+import { formatHledgerJournal, toggleCommentLines, sortHledgerJournal, parseAmount, formatAmountValue, calculateBalancingAmount } from '../src/index';
 
-suite('Hledger Formatter Tests', () => {
-	vscode.window.showInformationMessage('Running hledger formatter tests');
+describe('Hledger Formatter Tests', () => {
 
 	const testsPath = path.join(__dirname, 'test_journals');
-	
-	// Helper function to read test journal files
+
 	function readTestFile(filename: string): string {
 		const filePath = path.join(testsPath, filename);
 		return fs.readFileSync(filePath, 'utf8');
 	}
 
-	// Helper function to normalize line endings and trailing whitespace
 	function normalizeText(text: string): string {
 		return text.split('\n')
 			.map(line => line.trimRight())
@@ -25,72 +21,56 @@ suite('Hledger Formatter Tests', () => {
 			.trim();
 	}
 
-	test('Format test_1 journal file', () => {
-		// Read input and expected output files
+	it('Format test_1 journal file', () => {
 		const inputJournal = readTestFile('test_1_in.journal');
 		const expectedOutput = readTestFile('test_1_out.journal');
-		
-		// Format the input journal
-		const formattedJournal = formatHledgerJournal(inputJournal);
-		
-		// Normalize both texts to handle line endings and whitespace
-		const normalizedFormatted = normalizeText(formattedJournal);
-		const normalizedExpected = normalizeText(expectedOutput);
-		
-		// Verify the formatting matches the expected output
-		assert.strictEqual(normalizedFormatted, normalizedExpected, 
-			'Formatted output should match expected output');
-		
-		// Additional verification: Check decimal point alignment
-		const decimalPointsAligned = verifyDecimalPointsAligned(formattedJournal);
-		assert.strictEqual(decimalPointsAligned, true, 
-			'Decimal points should be aligned in each transaction');
-	});
-	
-	test('Format inconsistent indentation', () => {
-		// Read input and expected output files
-		const inputJournal = readTestFile('inconsistent_indents_in.journal');
-		const expectedOutput = readTestFile('inconsistent_indents_out.journal');
 
-		// Format the input journal
 		const formattedJournal = formatHledgerJournal(inputJournal);
 
-		// Normalize both texts to handle line endings and whitespace
 		const normalizedFormatted = normalizeText(formattedJournal);
 		const normalizedExpected = normalizeText(expectedOutput);
 
-		// Verify the formatting matches the expected output
 		assert.strictEqual(normalizedFormatted, normalizedExpected,
-			'Formatted output with inconsistent indentation should match expected output');
+			'Formatted output should match expected output');
 
-		// Verify indentation correction
-		const correctIndentation = verifyIndentation(formattedJournal);
-		assert.strictEqual(correctIndentation, true,
-			'All posting lines should have exactly 2 spaces of indentation');
-
-		// Verify decimal point alignment
 		const decimalPointsAligned = verifyDecimalPointsAligned(formattedJournal);
 		assert.strictEqual(decimalPointsAligned, true,
 			'Decimal points should be aligned in each transaction');
 	});
 
-	test('Format transaction headers with leading spaces', () => {
-		// Read input and expected output files
-		const inputJournal = readTestFile('header_indented_in.journal');
-		const expectedOutput = readTestFile('header_indented_out.journal');
+	it('Format inconsistent indentation', () => {
+		const inputJournal = readTestFile('inconsistent_indents_in.journal');
+		const expectedOutput = readTestFile('inconsistent_indents_out.journal');
 
-		// Format the input journal
 		const formattedJournal = formatHledgerJournal(inputJournal);
 
-		// Normalize both texts to handle line endings and whitespace
 		const normalizedFormatted = normalizeText(formattedJournal);
 		const normalizedExpected = normalizeText(expectedOutput);
 
-		// Verify the formatting matches the expected output
+		assert.strictEqual(normalizedFormatted, normalizedExpected,
+			'Formatted output with inconsistent indentation should match expected output');
+
+		const correctIndentation = verifyIndentation(formattedJournal);
+		assert.strictEqual(correctIndentation, true,
+			'All posting lines should have exactly 2 spaces of indentation');
+
+		const decimalPointsAligned = verifyDecimalPointsAligned(formattedJournal);
+		assert.strictEqual(decimalPointsAligned, true,
+			'Decimal points should be aligned in each transaction');
+	});
+
+	it('Format transaction headers with leading spaces', () => {
+		const inputJournal = readTestFile('header_indented_in.journal');
+		const expectedOutput = readTestFile('header_indented_out.journal');
+
+		const formattedJournal = formatHledgerJournal(inputJournal);
+
+		const normalizedFormatted = normalizeText(formattedJournal);
+		const normalizedExpected = normalizeText(expectedOutput);
+
 		assert.strictEqual(normalizedFormatted, normalizedExpected,
 			'Transaction headers should not have leading spaces');
 
-		// Verify transaction headers start at column 0
 		const lines = formattedJournal.split('\n');
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
@@ -100,40 +80,33 @@ suite('Hledger Formatter Tests', () => {
 			}
 		}
 	});
-	
-	test('Format sample journal with negative amounts', () => {
-		// Read input and expected output files
+
+	it('Format sample journal with negative amounts', () => {
 		const inputJournal = readTestFile('sample_in.journal');
 		const expectedOutput = readTestFile('sample_out.journal');
-		
-		// Format the input journal
+
 		const formattedJournal = formatHledgerJournal(inputJournal);
-		
-		// Normalize both texts to handle line endings and whitespace
+
 		const normalizedFormatted = normalizeText(formattedJournal);
 		const normalizedExpected = normalizeText(expectedOutput);
-		
-		// Verify the formatting matches the expected output
-		assert.strictEqual(normalizedFormatted, normalizedExpected, 
+
+		assert.strictEqual(normalizedFormatted, normalizedExpected,
 			'Formatted output should correctly format negative amounts');
-		
-		// Verify indentation correction
+
 		const correctIndentation = verifyIndentation(formattedJournal);
-		assert.strictEqual(correctIndentation, true, 
+		assert.strictEqual(correctIndentation, true,
 			'All posting lines should have exactly 2 spaces of indentation');
-		
-		// Verify decimal point alignment
+
 		const decimalPointsAligned = verifyDecimalPointsAligned(formattedJournal);
-		assert.strictEqual(decimalPointsAligned, true, 
+		assert.strictEqual(decimalPointsAligned, true,
 			'Decimal points should be aligned in each transaction');
-			
-		// Verify negative amounts format
+
 		const correctNegativeFormat = verifyNegativeAmountFormat(formattedJournal);
-		assert.strictEqual(correctNegativeFormat, true, 
+		assert.strictEqual(correctNegativeFormat, true,
 			'Negative amounts should be in -$X.XX format');
 	});
 
-	test('Format dates to default format with padding', () => {
+	it('Format dates to default format with padding', () => {
 		const mixedDates = `2025/3/1 Sample transaction
   Assets:Cash  $10.00
   Income:Misc -$10.00
@@ -148,7 +121,7 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(lines[4], '2025-03-02 Second');
 	});
 
-	test('Format dates to configured style', () => {
+	it('Format dates to configured style', () => {
 		const original = `2025-03-01 Sample transaction
   Assets:Cash  $10.00
   Income:Misc -$10.00
@@ -163,7 +136,7 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(lines[4], '2025/03/02 Another one');
 	});
 
-	test('Format dates to dotted style', () => {
+	it('Format dates to dotted style', () => {
 		const original = `2025-03-01 One
   Assets:Cash $10.00
   Income:Misc -$10.00
@@ -177,136 +150,108 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(lines[0], '2025.03.01 One');
 		assert.strictEqual(lines[4], '2025.03.02 Two');
 	});
-	
-	test('Correct alignment of negative amounts', () => {
-		// Read input and expected output files
+
+	it('Correct alignment of negative amounts', () => {
 		const inputJournal = readTestFile('negative_amounts_in.journal');
 		const expectedOutput = readTestFile('negative_amounts_out.journal');
-		
-		// Format the input journal
+
 		const formattedJournal = formatHledgerJournal(inputJournal);
-		
-		// Normalize both texts to handle line endings and whitespace
+
 		const normalizedFormatted = normalizeText(formattedJournal);
 		const normalizedExpected = normalizeText(expectedOutput);
-		
-		// Verify the formatting matches the expected output
-		assert.strictEqual(normalizedFormatted, normalizedExpected, 
+
+		assert.strictEqual(normalizedFormatted, normalizedExpected,
 			'Formatted output should correctly align negative amounts in both formats');
-		
-		// Visual debug if test fails
+
 		if (normalizedFormatted !== normalizedExpected) {
 			console.log('Expected:\n' + expectedOutput);
 			console.log('Actual:\n' + formattedJournal);
 		}
-		
-		// Verify negative amounts format
+
 		const correctNegativeFormat = verifyNegativeAmountFormat(formattedJournal);
 		assert.strictEqual(correctNegativeFormat, true,
 			'Negative amounts should be in -$X.XX format');
 	});
 
-	test('Remove leading blank lines', () => {
-		// Read input and expected output files
+	it('Remove leading blank lines', () => {
 		const inputJournal = readTestFile('leading_blanks_in.journal');
 		const expectedOutput = readTestFile('leading_blanks_out.journal');
-		
-		// Format the input journal
+
 		const formattedJournal = formatHledgerJournal(inputJournal);
-		
-		// Verify no leading blank lines
-		assert.strictEqual(formattedJournal[0] !== '\n', true, 
+
+		assert.strictEqual(formattedJournal[0] !== '\n', true,
 			'Formatted output should not start with a blank line');
-		
-		// Normalize both texts to handle line endings and whitespace
+
 		const normalizedFormatted = normalizeText(formattedJournal);
 		const normalizedExpected = normalizeText(expectedOutput);
-		
-		// Verify the formatting matches the expected output
-		assert.strictEqual(normalizedFormatted, normalizedExpected, 
+
+		assert.strictEqual(normalizedFormatted, normalizedExpected,
 			'Formatted output should remove leading blank lines');
-		
-		// Additional verification: ensure first line is not blank
+
 		const lines = formattedJournal.split('\n');
 		assert.strictEqual(lines[0].trim().length > 0, true,
 			'First line should have content');
 	});
 
-	test('Toggle comment - simple case', () => {
-		// Read input and expected output files
+	it('Toggle comment - simple case', () => {
 		const inputJournal = readTestFile('comment_simple_in.journal');
 		const expectedOutput = readTestFile('comment_simple_out.journal');
 
-		// Toggle comments on all lines (0 to end)
 		const lines = inputJournal.split('\n');
 		const modifiedJournal = toggleCommentLines(inputJournal, 0, lines.length - 1);
 
-		// Normalize both texts to handle line endings and whitespace
 		const normalizedModified = normalizeText(modifiedJournal);
 		const normalizedExpected = normalizeText(expectedOutput);
 
-		// Verify the comment toggle matches the expected output
 		assert.strictEqual(normalizedModified, normalizedExpected,
 			'Comment toggle should match expected output');
 	});
 
-	test('Toggle comment - mixed case', () => {
-		// Read input and expected output files
+	it('Toggle comment - mixed case', () => {
 		const inputJournal = readTestFile('comment_mixed_in.journal');
 		const expectedOutput = readTestFile('comment_mixed_out.journal');
 
-		// Toggle comments on all lines (0 to end)
 		const lines = inputJournal.split('\n');
 		const modifiedJournal = toggleCommentLines(inputJournal, 0, lines.length - 1);
 
-		// Normalize both texts to handle line endings and whitespace
 		const normalizedModified = normalizeText(modifiedJournal);
 		const normalizedExpected = normalizeText(expectedOutput);
 
-		// Verify the comment toggle matches the expected output
 		assert.strictEqual(normalizedModified, normalizedExpected,
 			'Mixed comment toggle should match expected output');
 	});
 
-	test('Toggle comment - indented case', () => {
-		// Read input and expected output files
+	it('Toggle comment - indented case', () => {
 		const inputJournal = readTestFile('comment_indented_in.journal');
 		const expectedOutput = readTestFile('comment_indented_out.journal');
 
-		// Toggle comments on all lines (0 to end)
 		const lines = inputJournal.split('\n');
 		const modifiedJournal = toggleCommentLines(inputJournal, 0, lines.length - 1);
 
-		// Normalize both texts to handle line endings and whitespace
 		const normalizedModified = normalizeText(modifiedJournal);
 		const normalizedExpected = normalizeText(expectedOutput);
 
-		// Verify the comment toggle matches the expected output
 		assert.strictEqual(normalizedModified, normalizedExpected,
 			'Indented comment toggle should match expected output');
 	});
 
-	test('Toggle comment - single line', () => {
+	it('Toggle comment - single line', () => {
 		const testInput = '2025-03-01 Test transaction\n  Assets:Cash                $100.00\n  Income:Salary             -$100.00';
 
-		// Toggle comment on first line only
 		const result = toggleCommentLines(testInput, 0, 0);
 		const lines = result.split('\n');
 
-		// First line should be commented, others unchanged
 		assert.strictEqual(lines[0], '; 2025-03-01 Test transaction');
 		assert.strictEqual(lines[1], '  Assets:Cash                $100.00');
 		assert.strictEqual(lines[2], '  Income:Salary             -$100.00');
 	});
 
-	test('Toggle comment - range selection', () => {
+	it('Toggle comment - range selection', () => {
 		const testInput = '2025-03-01 Test transaction\n  Assets:Cash                $100.00\n  Income:Salary             -$100.00\n\n2025-03-02 Another transaction';
 
-		// Toggle comment on lines 1-2 only (the posting lines)
 		const result = toggleCommentLines(testInput, 1, 2);
 		const lines = result.split('\n');
 
-		// First line unchanged, lines 1-2 commented with preserved indentation, rest unchanged
 		assert.strictEqual(lines[0], '2025-03-01 Test transaction');
 		assert.strictEqual(lines[1], '  ; Assets:Cash                $100.00');
 		assert.strictEqual(lines[2], '  ; Income:Salary             -$100.00');
@@ -314,23 +259,20 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(lines[4], '2025-03-02 Another transaction');
 	});
 
-	test('Toggle comment - uncomment previously commented', () => {
+	it('Toggle comment - uncomment previously commented', () => {
 		const testInput = '; 2025-03-01 Test transaction\n  ; Assets:Cash                $100.00\n  ; Income:Salary             -$100.00';
 
-		// Toggle comment on all lines (should uncomment)
 		const result = toggleCommentLines(testInput, 0, 2);
 		const lines = result.split('\n');
 
-		// All lines should be uncommented
 		assert.strictEqual(lines[0], '2025-03-01 Test transaction');
 		assert.strictEqual(lines[1], '  Assets:Cash                $100.00');
 		assert.strictEqual(lines[2], '  Income:Salary             -$100.00');
 	});
 
-	test('Toggle comment - smart block behavior with mixed states', () => {
+	it('Toggle comment - smart block behavior with mixed states', () => {
 		const mixedInput = '; 2025-07-31 * Reconciled - July 2025\n  assets:bank:checking matched statement balance of $96.98\n  ; reconciliation completed Fri Sep 19 16:10:46 EDT 2025';
 
-		// First toggle: should comment all lines (since some are uncommented)
 		const firstToggle = toggleCommentLines(mixedInput, 0, 2);
 		const firstLines = firstToggle.split('\n');
 
@@ -338,7 +280,6 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(firstLines[1], '  ; assets:bank:checking matched statement balance of $96.98');
 		assert.strictEqual(firstLines[2], '  ; reconciliation completed Fri Sep 19 16:10:46 EDT 2025');
 
-		// Second toggle: should uncomment all lines (since all are now commented)
 		const secondToggle = toggleCommentLines(firstToggle, 0, 2);
 		const secondLines = secondToggle.split('\n');
 
@@ -347,24 +288,20 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(secondLines[2], '  reconciliation completed Fri Sep 19 16:10:46 EDT 2025');
 	});
 
-	test('Sort journal entries by date', () => {
-		// Read input and expected output files
+	it('Sort journal entries by date', () => {
 		const inputJournal = readTestFile('sort_in.journal');
 		const expectedOutput = readTestFile('sort_out.journal');
 
-		// Sort the input journal
 		const sortedJournal = sortHledgerJournal(inputJournal);
 
-		// Normalize both texts to handle line endings and whitespace
 		const normalizedSorted = normalizeText(sortedJournal);
 		const normalizedExpected = normalizeText(expectedOutput);
 
-		// Verify the sorted output matches the expected output
 		assert.strictEqual(normalizedSorted, normalizedExpected,
 			'Sorted journal should match expected output');
 	});
 
-	test('Sorts mixed date formats without rewriting them', () => {
+	it('Sorts mixed date formats without rewriting them', () => {
 		const mixedInput = `2025/03/05 Transaction slash
   Assets:Cash $5.00
   Income:Misc -$5.00
@@ -383,7 +320,7 @@ suite('Hledger Formatter Tests', () => {
 		assert.deepStrictEqual(actualHeaders, expectedOrder, 'Dates should remain in their original format while being sorted by value');
 	});
 
-	test('Sort maintains transaction integrity', () => {
+	it('Sort maintains transaction integrity', () => {
 		const testInput = `2025-03-10 Transaction 3
   Assets:Cash                $300.00
   Income:Sales              -$300.00
@@ -399,19 +336,16 @@ suite('Hledger Formatter Tests', () => {
 		const sorted = sortHledgerJournal(testInput);
 		const lines = sorted.split('\n');
 
-		// Verify transactions are in correct order
 		assert.ok(lines[0].includes('2025-03-01'), 'First transaction should be March 1');
 		assert.ok(lines[4].includes('2025-03-05'), 'Second transaction should be March 5');
 		assert.ok(lines[8].includes('2025-03-10'), 'Third transaction should be March 10');
 
-		// Verify transaction integrity (postings stay with their headers)
 		assert.ok(lines[1].includes('$100.00'), 'First transaction should have $100.00');
 		assert.ok(lines[5].includes('$200.00'), 'Second transaction should have $200.00');
 		assert.ok(lines[9].includes('$300.00'), 'Third transaction should have $300.00');
 	});
 
-	test('Sort on save with formatting', () => {
-		// Test data with unsorted transactions and poor formatting
+	it('Sort on save with formatting', () => {
 		const unsortedInput = `; This is a header comment
 ; It should be preserved
 
@@ -427,14 +361,11 @@ suite('Hledger Formatter Tests', () => {
   Assets:Cash           $150.00
   Income:Sales   -$150.00`;
 
-		// First sort, then format (as the extension does with sortOnSave enabled)
 		const sorted = sortHledgerJournal(unsortedInput);
 		const formattedAndSorted = formatHledgerJournal(sorted);
-		
-		// Verify the transactions are in the correct order
+
 		const lines = formattedAndSorted.split('\n');
-		
-		// Find transaction dates in the output
+
 		const dates: string[] = [];
 		for (const line of lines) {
 			const dateMatch = line.match(/^(\d{4}-\d{2}-\d{2})/);
@@ -442,18 +373,15 @@ suite('Hledger Formatter Tests', () => {
 				dates.push(dateMatch[1]);
 			}
 		}
-		
-		// Verify dates are sorted
+
 		assert.strictEqual(dates.length, 3, 'Should have 3 transactions');
 		assert.strictEqual(dates[0], '2025-03-04', 'First transaction should be earliest date');
 		assert.strictEqual(dates[1], '2025-03-06', 'Second transaction should be middle date');
 		assert.strictEqual(dates[2], '2025-03-08', 'Third transaction should be latest date');
-		
-		// Verify leading comments are preserved
+
 		assert.strictEqual(lines[0], '; This is a header comment');
 		assert.strictEqual(lines[1], '; It should be preserved');
-		
-		// Verify formatting matches default expectations
+
 		assert.ok(verifyIndentation(formattedAndSorted), 'Posting lines should be indented with four spaces');
 		const amountGroups = collectAmountColumnsByTransaction(formattedAndSorted);
 		for (const group of amountGroups) {
@@ -465,54 +393,47 @@ suite('Hledger Formatter Tests', () => {
 		}
 	});
 
-	test('Format with custom column position', () => {
-		// Test input with transactions
+	it('Format with custom column position', () => {
 		const testInput = `2025-03-01 Test transaction
   Assets:Cash  $100.00
   Income:Salary       -$100.00
 
-2025-03-02 Another transaction  
+2025-03-02 Another transaction
   Expenses:Food    $25.50
   Assets:Cash   -$25.50`;
 
-		// Test with column position 30
 		const formatted30 = formatHledgerJournal(testInput, { amountAlignment: 'fixedColumn', amountColumnPosition: 30 });
 		const lines30 = formatted30.split('\n');
-		
-		// Verify amounts are aligned at column 30
+
 		const amountLines30 = lines30.filter(line => line.includes('$'));
 		for (const line of amountLines30) {
 			const digitIndex = line.search(/[0-9]/);
-			assert.ok(digitIndex >= 28 && digitIndex <= 32, 
+			assert.ok(digitIndex >= 28 && digitIndex <= 32,
 				`Amount digits should be aligned around column 30, got ${digitIndex}: ${line}`);
 		}
-		
-		// Test with column position 50
+
 		const formatted50 = formatHledgerJournal(testInput, { amountAlignment: 'fixedColumn', amountColumnPosition: 50 });
 		const lines50 = formatted50.split('\n');
-		
-		// Verify amounts are aligned at column 50
+
 		const amountLines50 = lines50.filter(line => line.includes('$'));
 		for (const line of amountLines50) {
 			const digitIndex = line.search(/[0-9]/);
-			assert.ok(digitIndex >= 48 && digitIndex <= 52, 
+			assert.ok(digitIndex >= 48 && digitIndex <= 52,
 				`Amount digits should be aligned around column 50, got ${digitIndex}: ${line}`);
 		}
-		
-		// Test with default column position (42) but fixed alignment
+
 		const formattedDefault = formatHledgerJournal(testInput, { amountAlignment: 'fixedColumn' });
 		const linesDefault = formattedDefault.split('\n');
-		
-		// Verify amounts are aligned at column 42 (default)
+
 		const amountLinesDefault = linesDefault.filter(line => line.includes('$'));
 		for (const line of amountLinesDefault) {
 			const digitIndex = line.search(/[0-9]/);
-			assert.ok(digitIndex >= 40 && digitIndex <= 44, 
+			assert.ok(digitIndex >= 40 && digitIndex <= 44,
 				`Amount digits should be aligned around column 42 (default), got ${digitIndex}: ${line}`);
 		}
 	});
 
-	test('Respects alternate negative commodity style configuration', () => {
+	it('Respects alternate negative commodity style configuration', () => {
 		const testInput = `2025-04-01 Example
   Assets:Cash                $150.00
   Income:Salary             -$150.00`;
@@ -525,7 +446,7 @@ suite('Hledger Formatter Tests', () => {
 		assert.ok(!incomeLine?.includes('$-150.00'), 'Configured style should not emit $- notation when overridden');
 	});
 
-	test('Aligns amounts by widest account when configured', () => {
+	it('Aligns amounts by widest account when configured', () => {
 		const testInput = `2025-05-01 Mixed accounts
   Assets:Very:Long:Account Name          $123.45
   Equity:Opening                        -$123.45
@@ -607,7 +528,7 @@ suite('Hledger Formatter Tests', () => {
 		return matchIndex === -1 ? null : matchIndex;
 	}
 
-	test('Uses configured indentation width', () => {
+	it('Uses configured indentation width', () => {
 		const testInput = `2025-06-01 Indentation test
   Assets:Cash                $75.00
   Income:Misc               -$75.00`;
@@ -619,7 +540,7 @@ suite('Hledger Formatter Tests', () => {
 		}
 	});
 
-	test('Sort preserves comments at beginning', () => {
+	it('Sort preserves comments at beginning', () => {
 		const testInput = `; File header comment
 ; This should stay at the top
 
@@ -634,76 +555,62 @@ suite('Hledger Formatter Tests', () => {
 		const sorted = sortHledgerJournal(testInput);
 		const lines = sorted.split('\n');
 
-		// Verify header comments are preserved
 		assert.strictEqual(lines[0], '; File header comment');
 		assert.strictEqual(lines[1], '; This should stay at the top');
 
-		// Verify transactions are sorted after comments
 		assert.ok(lines[3].includes('2025-03-01'), 'First transaction should be March 1');
 		assert.ok(lines[7].includes('2025-03-05'), 'Second transaction should be March 5');
 	});
 
-	test('New file command generates correct filename format', () => {
-		// Test month name mapping
+	it('New file command generates correct filename format', () => {
 		const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
-		// Verify each month generates correct format
 		for (let month = 1; month <= 12; month++) {
 			const paddedMonth = month.toString().padStart(2, '0');
 			const monthName = monthNames[month - 1];
 			const expectedFileName = `${paddedMonth}-${monthName}.journal`;
 
-			// Verify format
 			assert.ok(expectedFileName.match(/^\d{2}-[a-z]{3}\.journal$/),
 				`File name ${expectedFileName} should match format XX-mon.journal`);
 		}
 
-		// Specific test cases
 		assert.strictEqual(monthNames[8], 'sep', 'September should be abbreviated as "sep"');
 		assert.strictEqual('09', '9'.padStart(2, '0'), 'Month 9 should pad to "09"');
 		assert.strictEqual('12', '12'.padStart(2, '0'), 'Month 12 should stay as "12"');
 	});
 
-	test('Format with all comment formats', () => {
-		// Read input and expected output files
+	it('Format with all comment formats', () => {
 		const inputJournal = readTestFile('comment_formats_in.journal');
 		const expectedOutput = readTestFile('comment_formats_out.journal');
 
-		// Format the input journal
 		const formattedJournal = formatHledgerJournal(inputJournal);
 
-		// Normalize both texts to handle line endings and whitespace
 		const normalizedFormatted = normalizeText(formattedJournal);
 		const normalizedExpected = normalizeText(expectedOutput);
 
-		// Verify the formatting matches the expected output
 		assert.strictEqual(normalizedFormatted, normalizedExpected,
 			'Formatter should handle all comment formats (#, ;, *, comment blocks)');
 	});
 
-	test('Toggle comment with hash character preference', () => {
+	it('Toggle comment with hash character preference', () => {
 		const testInput = '2025-03-01 Test transaction\n    Assets:Cash                $100.00\n    Income:Salary             -$100.00';
 
-		// Toggle comment with hash preference
 		const result = toggleCommentLines(testInput, 0, 0, { commentCharacter: '#' });
 		const lines = result.split('\n');
 
-		// First line should be commented with hash
 		assert.strictEqual(lines[0], '# 2025-03-01 Test transaction');
 	});
 
-	test('Toggle comment with asterisk character preference', () => {
+	it('Toggle comment with asterisk character preference', () => {
 		const testInput = '2025-03-01 Test transaction\n    Assets:Cash                $100.00\n    Income:Salary             -$100.00';
 
-		// Toggle comment with asterisk preference
 		const result = toggleCommentLines(testInput, 0, 0, { commentCharacter: '*' });
 		const lines = result.split('\n');
 
-		// First line should be commented with asterisk
 		assert.strictEqual(lines[0], '* 2025-03-01 Test transaction');
 	});
 
-	test('Toggle uncomment any comment format', () => {
+	it('Toggle uncomment any comment format', () => {
 		const testInputs = [
 			'; 2025-03-01 Test transaction',
 			'# 2025-03-01 Test transaction',
@@ -712,21 +619,18 @@ suite('Hledger Formatter Tests', () => {
 
 		for (const testInput of testInputs) {
 			const result = toggleCommentLines(testInput, 0, 0);
-			// All should uncomment to the same result
 			assert.strictEqual(result, '2025-03-01 Test transaction',
 				`Should uncomment ${testInput[0]} format`);
 		}
 	});
 
-	test('Toggle comment preserves indentation with all formats', () => {
+	it('Toggle comment preserves indentation with all formats', () => {
 		const testInput = '2025-03-01 Test\n    Assets:Cash    $100.00\n    Income:Salary  -$100.00';
 
-		// Test with each comment character
 		for (const char of [';', '#', '*'] as const) {
 			const result = toggleCommentLines(testInput, 1, 2, { commentCharacter: char });
 			const lines = result.split('\n');
 
-			// Posting lines should be commented with preserved indentation
 			assert.strictEqual(lines[1], `    ${char} Assets:Cash    $100.00`,
 				`Should preserve indentation with ${char} character`);
 			assert.strictEqual(lines[2], `    ${char} Income:Salary  -$100.00`,
@@ -734,83 +638,71 @@ suite('Hledger Formatter Tests', () => {
 		}
 	});
 
-	// Helper function to verify posting lines use the default indentation width (4 spaces)
 	function verifyIndentation(formattedText: string): boolean {
 		const lines = formattedText.split('\n');
 		let inTransaction = false;
-		
+
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i].trimRight();
 			if (!line) {
 				inTransaction = false;
 				continue;
 			}
-			
-			// Check if this is a transaction header
+
 			if (/^\d{4}[-/]\d{2}[-/]\d{2}/.test(line)) {
 				inTransaction = true;
 				continue;
 			}
-			
-			// Skip comment lines
+
 			if (line.trim().startsWith(';')) {
 				continue;
 			}
-			
-			// Check posting lines indentation
+
 			if (inTransaction) {
-				// Verify exactly 4 spaces indentation
 				if (!line.startsWith('    ') || line.startsWith('     ')) {
 					console.error(`Incorrect indentation at line ${i+1}: "${line}"`);
 					return false;
 				}
 			}
 		}
-		
+
 		return true;
 	}
-	
-	// Helper function to verify decimal points are aligned within each transaction
+
 	function verifyDecimalPointsAligned(formattedText: string): boolean {
 		const lines = formattedText.split('\n');
-		const decimalPositions = new Map<number, number>(); // Maps transaction index to decimal position
-		
+		const decimalPositions = new Map<number, number>();
+
 		let currentTransaction = -1;
 		let inTransaction = false;
-		
+
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i].trimRight();
-			
-			// Skip empty lines or end transaction
+
 			if (!line) {
 				inTransaction = false;
 				continue;
 			}
-			
-			// Check if this is a transaction header (starts with date)
+
 			if (/^\d{4}[-/]\d{2}[-/]\d{2}/.test(line)) {
 				currentTransaction++;
 				inTransaction = true;
 				continue;
 			}
-			
-			// Skip comment lines
+
 			if (line.trim().startsWith(';')) {
 				continue;
 			}
-			
-			// Process posting lines
+
 			if (inTransaction && !line.trim().startsWith(';')) {
-				// Check indentation
 				if (!line.startsWith('    ')) {
 					console.error(`Line ${i+1} doesn't have proper indentation: "${line}"`);
 					return false;
 				}
-				
-				// Check for decimal point
+
 				if (line.includes('.')) {
 					const decimalPosition = line.indexOf('.');
-					
+
 					if (!decimalPositions.has(currentTransaction)) {
 						decimalPositions.set(currentTransaction, decimalPosition);
 					} else {
@@ -824,166 +716,161 @@ suite('Hledger Formatter Tests', () => {
 				}
 			}
 		}
-		
+
 		return true;
 	}
-	
-	// Helper function to verify negative amounts default to $-X.XX format
+
 	function verifyNegativeAmountFormat(formattedText: string): boolean {
 		const lines = formattedText.split('\n');
-		
+
 		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i].trimRight();
-			
-			// Skip transaction headers, comments, and empty lines
+
 			if (!line || /^\d{4}[-/]\d{2}[-/]\d{2}/.test(line) || line.trim().startsWith(';')) {
 				continue;
 			}
-			
-			// Look for any amount in -$X.XX format (incorrect for default)
+
 			if (line.includes('-$')) {
 				console.error(`Line ${i+1} has incorrect negative amount format: "${line}"`);
 				return false;
 			}
-			
-			// Check for $-X.XX format (correct)
+
 			if (line.includes('$-')) {
-				// This is the correct format
 				continue;
 			}
 		}
-		
+
 		return true;
 	}
 
 	// Tests for balancing amount suggestions
-	test('parseAmount - positive dollar amount', () => {
+	it('parseAmount - positive dollar amount', () => {
 		const result = parseAmount('$100.50');
 		assert.ok(result, 'Should parse positive dollar amount');
 		assert.strictEqual(result?.value, 100.50);
 		assert.strictEqual(result?.currency, '$');
 	});
 
-	test('parseAmount - negative dollar amount with sign before symbol', () => {
+	it('parseAmount - negative dollar amount with sign before symbol', () => {
 		const result = parseAmount('-$50.25');
 		assert.ok(result, 'Should parse negative amount with sign before symbol');
 		assert.strictEqual(result?.value, -50.25);
 		assert.strictEqual(result?.currency, '$');
 	});
 
-	test('parseAmount - negative dollar amount with sign after symbol', () => {
+	it('parseAmount - negative dollar amount with sign after symbol', () => {
 		const result = parseAmount('$-75.00');
 		assert.ok(result, 'Should parse negative amount with sign after symbol');
 		assert.strictEqual(result?.value, -75.00);
 		assert.strictEqual(result?.currency, '$');
 	});
 
-	test('parseAmount - amount with commas', () => {
+	it('parseAmount - amount with commas', () => {
 		const result = parseAmount('$1,234.56');
 		assert.ok(result, 'Should parse amount with commas');
 		assert.strictEqual(result?.value, 1234.56);
 		assert.strictEqual(result?.currency, '$');
 	});
 
-	test('parseAmount - Euro symbol', () => {
+	it('parseAmount - Euro symbol', () => {
 		const result = parseAmount('€99.99');
 		assert.ok(result, 'Should parse Euro amount');
 		assert.strictEqual(result?.value, 99.99);
 		assert.strictEqual(result?.currency, '€');
 	});
 
-	test('parseAmount - invalid format', () => {
+	it('parseAmount - invalid format', () => {
 		const result = parseAmount('not a number');
 		assert.strictEqual(result, null, 'Should return null for invalid format');
 	});
 
-	test('parseAmount - simple commodity name', () => {
+	it('parseAmount - simple commodity name', () => {
 		const result = parseAmount('USD 0.5');
 		assert.ok(result, 'Should parse simple commodity name');
 		assert.strictEqual(result?.value, 0.5);
 		assert.strictEqual(result?.currency, 'USD');
 	});
 
-	test('parseAmount - negative before simple commodity name', () => {
+	it('parseAmount - negative before simple commodity name', () => {
 		const result = parseAmount('-USD 50.25');
 		assert.ok(result, 'Should parse negative with arbitrary commodity name');
 		assert.strictEqual(result?.value, -50.25);
 		assert.strictEqual(result?.currency, 'USD');
 	});
 
-	test('parseAmount - quoted commodity name', () => {
+	it('parseAmount - quoted commodity name', () => {
 		const result = parseAmount('"US Dollar" 100.00');
 		assert.ok(result, 'Should parse quoted commodity name');
 		assert.strictEqual(result?.value, 100.00);
 		assert.strictEqual(result?.currency, '"US Dollar"');
 	});
 
-	test('parseAmount - negative sign before quoted commodity name', () => {
+	it('parseAmount - negative sign before quoted commodity name', () => {
 		const result = parseAmount('-"US Dollar" 100.00');
 		assert.ok(result, 'Should parse negative sign before quoted commodity name');
 		assert.strictEqual(result?.value, -100.00);
 		assert.strictEqual(result?.currency, '"US Dollar"');
 	});
 
-	test('parseAmount - number before simple commodity name', () => {
+	it('parseAmount - number before simple commodity name', () => {
 		const result = parseAmount('100.50 USD');
 		assert.ok(result, 'Should parse number before commodity name');
 		assert.strictEqual(result?.value, 100.50);
 		assert.strictEqual(result?.currency, 'USD');
 	});
 
-	test('parseAmount - negative number before simple commodity name', () => {
+	it('parseAmount - negative number before simple commodity name', () => {
 		const result = parseAmount('-100.50 USD');
 		assert.ok(result, 'Should parse negative number before commodity name');
 		assert.strictEqual(result?.value, -100.50);
 		assert.strictEqual(result?.currency, 'USD');
 	});
 
-	test('parseAmount - number before quoted commodity name', () => {
+	it('parseAmount - number before quoted commodity name', () => {
 		const result = parseAmount('100.00 "US Dollar"');
 		assert.ok(result, 'Should parse number before quoted commodity name');
 		assert.strictEqual(result?.value, 100.00);
 		assert.strictEqual(result?.currency, '"US Dollar"');
 	});
 
-	test('parseAmount - negative number before quoted commodity name', () => {
+	it('parseAmount - negative number before quoted commodity name', () => {
 		const result = parseAmount('-100.00 "US Dollar"');
 		assert.ok(result, 'Should parse negative number before quoted commodity name');
 		assert.strictEqual(result?.value, -100.00);
 		assert.strictEqual(result?.currency, '"US Dollar"');
 	});
 
-	test('formatAmountValue - positive with symbolBeforeSign', () => {
+	it('formatAmountValue - positive with symbolBeforeSign', () => {
 		const result = formatAmountValue(100.50, '$', 'symbolBeforeSign');
 		assert.strictEqual(result, '$100.50');
 	});
 
-	test('formatAmountValue - negative with symbolBeforeSign', () => {
+	it('formatAmountValue - negative with symbolBeforeSign', () => {
 		const result = formatAmountValue(-100.50, '$', 'symbolBeforeSign');
 		assert.strictEqual(result, '$-100.50');
 	});
 
-	test('formatAmountValue - negative with signBeforeSymbol', () => {
+	it('formatAmountValue - negative with signBeforeSymbol', () => {
 		const result = formatAmountValue(-100.50, '$', 'signBeforeSymbol');
 		assert.strictEqual(result, '-$100.50');
 	});
 
-	test('formatAmountValue - large amount with commas', () => {
+	it('formatAmountValue - large amount with commas', () => {
 		const result = formatAmountValue(1234.56, '$', 'symbolBeforeSign');
 		assert.strictEqual(result, '$1,234.56');
 	});
 
-	test('formatAmountValue - simple commodity name', () => {
+	it('formatAmountValue - simple commodity name', () => {
 		const result = formatAmountValue(100.50, 'USD', 'symbolBeforeSign');
 		assert.strictEqual(result, 'USD100.50');
 	});
 
-	test('formatAmountValue - quoted commodity name', () => {
+	it('formatAmountValue - quoted commodity name', () => {
 		const result = formatAmountValue(100.50, '"US Dollar"', 'symbolBeforeSign');
 		assert.strictEqual(result, '"US Dollar"100.50');
 	});
 
-	test('calculateBalancingAmount - simple two posting transaction', () => {
+	it('calculateBalancingAmount - simple two posting transaction', () => {
 		const transaction = {
 			headerLine: 0,
 			lines: [
@@ -1003,12 +890,11 @@ suite('Hledger Formatter Tests', () => {
 		}, 'assets:cash');
 
 		assert.ok(result, 'Should calculate balancing amount');
-		// Verify spacing aligns properly (not just checking exact spaces, but that it has proper spacing)
 		assert.ok(result.startsWith('  '), 'Should have at least 2 spaces');
 		assert.ok(result.includes('$-50.00'), 'Should contain the correct amount');
 	});
 
-	test('calculateBalancingAmount - negative balancing amount', () => {
+	it('calculateBalancingAmount - negative balancing amount', () => {
 		const transaction = {
 			headerLine: 0,
 			lines: [
@@ -1032,7 +918,7 @@ suite('Hledger Formatter Tests', () => {
 		assert.ok(result.includes('$-100.00'), 'Should contain the correct amount');
 	});
 
-	test('calculateBalancingAmount - respects signBeforeSymbol style', () => {
+	it('calculateBalancingAmount - respects signBeforeSymbol style', () => {
 		const transaction = {
 			headerLine: 0,
 			lines: [
@@ -1056,7 +942,7 @@ suite('Hledger Formatter Tests', () => {
 		assert.ok(result.includes('-$100.00'), 'Should contain the correct amount with sign before symbol');
 	});
 
-	test('calculateBalancingAmount - three postings with one missing', () => {
+	it('calculateBalancingAmount - three postings with one missing', () => {
 		const transaction = {
 			headerLine: 0,
 			lines: [
@@ -1081,7 +967,7 @@ suite('Hledger Formatter Tests', () => {
 		assert.ok(result.includes('$-50.00'), 'Should contain the correct amount');
 	});
 
-	test('calculateBalancingAmount - returns null when multiple postings missing', () => {
+	it('calculateBalancingAmount - returns null when multiple postings missing', () => {
 		const transaction = {
 			headerLine: 0,
 			lines: [
@@ -1104,7 +990,7 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(result, null, 'Should return null when multiple postings are missing amounts');
 	});
 
-	test('calculateBalancingAmount - respects existing spacing in transaction', () => {
+	it('calculateBalancingAmount - respects existing spacing in transaction', () => {
 		const transaction = {
 			headerLine: 0,
 			lines: [
@@ -1138,7 +1024,7 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(resultDigitsColumn, expectedDigitsColumn, 'Digits should align with existing postings');
 	});
 
-	test('calculateBalancingAmount - ignores metadata lines when already balanced', () => {
+	it('calculateBalancingAmount - ignores metadata lines when already balanced', () => {
 		const transaction = {
 			headerLine: 0,
 			lines: [
@@ -1165,7 +1051,7 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(result, null, 'Should not suggest balancing amount when only metadata lines are missing amounts');
 	});
 
-	test('calculateBalancingAmount - ignores metadata placeholder without value', () => {
+	it('calculateBalancingAmount - ignores metadata placeholder without value', () => {
 		const transaction = {
 			headerLine: 0,
 			lines: [
@@ -1191,7 +1077,7 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(result, null, 'Should not suggest balancing amount for metadata placeholder line');
 	});
 
-	test('calculateBalancingAmount - already balanced transaction does not suggest zero', () => {
+	it('calculateBalancingAmount - already balanced transaction does not suggest zero', () => {
 		const transaction = {
 			headerLine: 0,
 			lines: [
@@ -1217,7 +1103,7 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(result, null, 'Should not suggest $0.00 when postings already balance');
 	});
 
-	test('calculateBalancingAmount - returns null when all postings have amounts', () => {
+	it('calculateBalancingAmount - returns null when all postings have amounts', () => {
 		const transaction = {
 			headerLine: 0,
 			lines: [
@@ -1239,7 +1125,7 @@ suite('Hledger Formatter Tests', () => {
 		assert.strictEqual(result, null, 'Should return null when all postings have amounts');
 	});
 
-	test('calculateBalancingAmount - handles Euro currency', () => {
+	it('calculateBalancingAmount - handles Euro currency', () => {
 		const transaction = {
 			headerLine: 0,
 			lines: [
