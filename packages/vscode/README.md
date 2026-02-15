@@ -42,7 +42,7 @@ Automatically sorts transactions chronologically:
 ![Sort Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/sort-demo.gif)
 
 ### Autocomplete / Balancing Suggestions
-Intelligent suggestions for both the standard categories and your own, and a suggestion for balancing amounts.  For more info see [AUTOCOMPLETE.md](AUTCOMPLETE.md).
+Intelligent suggestions for both the standard categories and your own, and a suggestion for balancing amounts.  For more info see [AUTOCOMPLETE.md](AUTOCOMPLETE.md).
 
 ![Autocomplete Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/autocomplete-demo.gif)
 

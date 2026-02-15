@@ -26,7 +26,7 @@ Looking for the CLI tool?  Check out: [hledger-fmt](packages/cli/README.md).
 
 ## Demo
 
-### Syntax Highlighting ([details](SYNTAX_HIGHLIGHTING.md))
+### Syntax Highlighting ([details](packages/vscode/SYNTAX_HIGHLIGHTING.md))
 Rich syntax highlighting with hierarchical account coloring and project tags:
 
 ![Syntax Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/syntax-demo.gif)
@@ -42,7 +42,7 @@ Automatically sorts transactions chronologically:
 ![Sort Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/sort-demo.gif)
 
 ### Autocomplete / Balancing Suggestions
-Intelligent suggestions for both the standard categories and your own, and a suggestion for balancing amounts.  For more info see [AUTOCOMPLETE.md](AUTCOMPLETE.md).
+Intelligent suggestions for both the standard categories and your own, and a suggestion for balancing amounts.  For more info see [AUTOCOMPLETE.md](packages/vscode/AUTOCOMPLETE.md).
 
 ![Autocomplete Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/autocomplete-demo.gif)
 
@@ -113,7 +113,7 @@ After formatting:
 
 ## Release Notes
 
-See [CHANGELOG.md](CHANGELOG.md) for a full list of changes in each release.
+See [packages/vscode/CHANGELOG.md](packages/vscode/CHANGELOG.md) for a full list of VS Code extension changes.
 
 ## Requirements
 

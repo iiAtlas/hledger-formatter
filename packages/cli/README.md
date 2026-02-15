@@ -206,6 +206,10 @@ Looking to automatically format and sort your HLedger Journals in VSCode? _(Alon
 
 Check out my VSCode extension [hledger-formatter](https://marketplace.visualstudio.com/items?itemName=iiatlas.hledger-formatter) which does exactly that!
 
+## Release Notes
+
+See [CHANGELOG.md](CHANGELOG.md) for CLI release history.
+
 ## Contributing
 
 See [CONTRIBUTING.md](https://github.com/iiAtlas/hledger-formatter/blob/main/CONTRIBUTING.md).
