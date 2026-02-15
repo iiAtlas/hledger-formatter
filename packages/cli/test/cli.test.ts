@@ -87,6 +87,70 @@ describe('CLI', () => {
 				stderr: expect.stringContaining('--in-place requires a file argument'),
 			});
 		});
+
+		it('loads formatter options from config file', async () => {
+			const cfg = path.join(os.tmpdir(), `hledger-fmt-config-${Date.now()}.json`);
+			try {
+				fs.writeFileSync(cfg, JSON.stringify({
+					format: {
+						dateFormat: 'YYYY/MM/DD',
+						negativeStyle: 'signBeforeSymbol'
+					}
+				}), 'utf8');
+
+				const { stdout } = await exec('node', [CLI, 'format', '--config', cfg, fixture('test_1_in.journal')]);
+				expect(stdout).toContain('2025/03/04 * Fastmail subscription');
+				expect(stdout).toContain('-$38.99');
+			} finally {
+				fs.unlinkSync(cfg);
+			}
+		});
+
+		it('warns and ignores invalid config file', async () => {
+			const cfg = path.join(os.tmpdir(), `hledger-fmt-invalid-config-${Date.now()}.json`);
+			try {
+				fs.writeFileSync(cfg, JSON.stringify({
+					format: {
+						alignment: 'not-a-real-mode'
+					}
+				}), 'utf8');
+
+				const { stdout, stderr } = await exec('node', [CLI, 'format', '--config', cfg, fixture('test_1_in.journal')]);
+				const expected = readFixture('test_1_out.journal');
+				expect(stderr).toContain('invalid config');
+				expect(normalize(stdout)).toBe(normalize(expected));
+			} finally {
+				fs.unlinkSync(cfg);
+			}
+		});
+
+		it('applies env options and CLI options with correct precedence', async () => {
+			const cfg = path.join(os.tmpdir(), `hledger-fmt-precedence-${Date.now()}.json`);
+			try {
+				fs.writeFileSync(cfg, JSON.stringify({
+					format: {
+						dateFormat: 'YYYY.MM.DD'
+					}
+				}), 'utf8');
+
+				const { stdout } = await exec(
+					'node',
+					[CLI, 'format', '--config', cfg, '--date-format', 'YYYY-MM-DD', fixture('test_1_in.journal')],
+					{
+						env: {
+							...process.env,
+							HLEDGER_FMT_DATE_FORMAT: 'YYYY/MM/DD'
+						}
+					}
+				);
+
+				expect(stdout).toContain('2025-03-04 * Fastmail subscription');
+				expect(stdout).not.toContain('2025/03/04 * Fastmail subscription');
+				expect(stdout).not.toContain('2025.03.04 * Fastmail subscription');
+			} finally {
+				fs.unlinkSync(cfg);
+			}
+		});
 	});
 
 	describe('sort', () => {
@@ -134,6 +198,60 @@ describe('CLI', () => {
 			await expect(exec('node', [CLI, 'bogus'])).rejects.toMatchObject({
 				code: 1,
 			});
+		});
+	});
+
+	describe('init', () => {
+		it('creates a default config file', async () => {
+			const dir = path.join(os.tmpdir(), `hledger-fmt-init-${Date.now()}`);
+			const cfg = path.join(dir, '.hledger-fmt.json');
+			try {
+				await exec('node', [CLI, 'init', '--path', cfg]);
+				const content = fs.readFileSync(cfg, 'utf8');
+				const parsed = JSON.parse(content);
+				expect(parsed).toEqual({
+					format: {
+						alignment: 'widest',
+						column: 42,
+						indent: 4,
+						negativeStyle: 'symbolBeforeSign',
+						dateFormat: 'YYYY-MM-DD',
+						commentChar: ';'
+					}
+				});
+			} finally {
+				fs.rmSync(dir, { recursive: true, force: true });
+			}
+		});
+
+		it('fails if config already exists without --force', async () => {
+			const dir = path.join(os.tmpdir(), `hledger-fmt-init-existing-${Date.now()}`);
+			const cfg = path.join(dir, '.hledger-fmt.json');
+			try {
+				fs.mkdirSync(dir, { recursive: true });
+				fs.writeFileSync(cfg, '{"format":{"indent":2}}\n', 'utf8');
+				await expect(exec('node', [CLI, 'init', '--path', cfg])).rejects.toMatchObject({
+					code: 1,
+					stderr: expect.stringContaining('already exists'),
+				});
+			} finally {
+				fs.rmSync(dir, { recursive: true, force: true });
+			}
+		});
+
+		it('overwrites config when --force is provided', async () => {
+			const dir = path.join(os.tmpdir(), `hledger-fmt-init-force-${Date.now()}`);
+			const cfg = path.join(dir, '.hledger-fmt.json');
+			try {
+				fs.mkdirSync(dir, { recursive: true });
+				fs.writeFileSync(cfg, '{"format":{"indent":2}}\n', 'utf8');
+				await exec('node', [CLI, 'init', '--path', cfg, '--force']);
+				const parsed = JSON.parse(fs.readFileSync(cfg, 'utf8'));
+				expect(parsed.format.indent).toBe(4);
+				expect(parsed.format.alignment).toBe('widest');
+			} finally {
+				fs.rmSync(dir, { recursive: true, force: true });
+			}
 		});
 	});
 });
