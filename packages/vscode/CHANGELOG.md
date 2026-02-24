@@ -2,6 +2,10 @@
 
 All notable changes to the "hledger-formatter" extension will be documented in this file.
 
+## [2.0.2]
+
+- Fix for formatter when numbers were used in account names ([#53](https://github.com/iiAtlas/hledger-formatter/issues/53)). Thanks to @arlagonix for the report!
+
 ## [2.0.1]
 
 - Tweaks to the README's, fixing broken links

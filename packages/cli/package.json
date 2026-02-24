@@ -1,6 +1,6 @@
 {
   "name": "@iiatlas/hledger-fmt",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Format and sort hledger journal files",
   "keywords": [
     "hledger",
