@@ -151,6 +151,19 @@ describe('Hledger Formatter Tests', () => {
 		assert.strictEqual(lines[4], '2025.03.02 Two');
 	});
 
+	it('Preserves account names containing digits when posting has no explicit amount', () => {
+		const input = `2023-03-12 sdfsf
+    assets:vtb:9907_master     500
+    assets:vtb:0377_копилка`;
+
+		const formatted = formatHledgerJournal(input);
+		const lines = formatted.split('\n');
+
+		assert.strictEqual(lines[0], '2023-03-12 sdfsf');
+		assert.match(lines[1], /^\s+assets:vtb:9907_master\s+500$/);
+		assert.strictEqual(lines[2], '    assets:vtb:0377_копилка');
+	});
+
 	it('Correct alignment of negative amounts', () => {
 		const inputJournal = readTestFile('negative_amounts_in.journal');
 		const expectedOutput = readTestFile('negative_amounts_out.journal');

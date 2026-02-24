@@ -166,7 +166,7 @@ export function extractPostingDetail(line: string): PostingDetail {
 		};
 	}
 
-	const fallbackMatch = trimmed.match(/^(\S+(?:\s+\S+)*?)(?:\s*)(\$-?\d+(?:,\d+)*(?:\.\d+)?|\-\$\d+(?:,\d+)*(?:\.\d+)?|\d+(?:,\d+)*(?:\.\d+)?)(.*)$/);
+	const fallbackMatch = trimmed.match(/^(\S+(?:\s+\S+)*?)\s+(\$-?\d+(?:,\d+)*(?:\.\d+)?|\-\$\d+(?:,\d+)*(?:\.\d+)?|\d+(?:,\d+)*(?:\.\d+)?)(.*)$/);
 	if (fallbackMatch) {
 		const account = fallbackMatch[1].trim();
 		const numericPart = fallbackMatch[2].trim();
