@@ -248,6 +248,18 @@ function getDigitsPrefixLength(amount: string): number {
 	return matchIndex === -1 ? trimmedAmount.length : matchIndex;
 }
 
+// Wide/fullwidth ranges from Unicode Standard Annex #11:
+// https://www.unicode.org/reports/tr11/
+const FULLWIDTH_CHARACTER = /[\u1100-\u115F\u2329-\u232A\u2E80-\u303E\u3040-\u3247\u3250-\u4DBF\u4E00-\uA4C6\uA960-\uA97C\uAC00-\uD7A3\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE6B\uFF01-\uFF60\uFFE0-\uFFE6\u{1B000}-\u{1B2FF}\u{1F200}-\u{1F251}\u{20000}-\u{3FFFD}]/u;
+
+function getAccountDisplayWidth(account: string): number {
+	let width = 0;
+	for (const character of account) {
+		width += FULLWIDTH_CHARACTER.test(character) ? 2 : character.length;
+	}
+	return width;
+}
+
 /**
  * Formats a transaction header by normalizing spaces between date, status marker, and description
  * @param headerLine The transaction header line
@@ -372,16 +384,20 @@ function formatTransaction(lines: string[], options: FormatterOptions): string[]
 	const referenceAccountLength = preparedPostings.reduce((max, prepared) => {
 		const account = prepared.detail.account;
 		if (account) {
-			return Math.max(max, account.length);
+			return Math.max(max, getAccountDisplayWidth(account));
 		}
 		return max;
 	}, 0);
 
 	let baseDigitsColumn: number;
 	if (options.amountAlignment === 'widest') {
-		const digitColumnCandidates = preparedPostings
-			.filter(prepared => prepared.detail.account && prepared.formattedAmount)
-			.map(prepared => indentWidth + (prepared.detail.account as string).length + prepared.digitsPrefixLength + 2);
+		const digitColumnCandidates = preparedPostings.flatMap(prepared => {
+			const account = prepared.detail.account;
+			if (!account || !prepared.formattedAmount) {
+				return [];
+			}
+			return [indentWidth + getAccountDisplayWidth(account) + prepared.digitsPrefixLength + 2];
+		});
 		const fallbackColumn = indentWidth + referenceAccountLength + 2;
 		baseDigitsColumn = digitColumnCandidates.length > 0 ? Math.max(fallbackColumn, ...digitColumnCandidates) : fallbackColumn;
 	} else {
@@ -403,7 +419,7 @@ function formatTransaction(lines: string[], options: FormatterOptions): string[]
 		}
 
 		const digitsPrefixLength = prepared.digitsPrefixLength;
-		const paddingTarget = baseDigitsColumn - (indentWidth + detail.account.length) - digitsPrefixLength;
+		const paddingTarget = baseDigitsColumn - (indentWidth + getAccountDisplayWidth(detail.account)) - digitsPrefixLength;
 		const paddingNeeded = Math.max(2, paddingTarget);
 		formattedLines.push(`${indentStr}${detail.account}${' '.repeat(paddingNeeded)}${amount}`);
 	}
