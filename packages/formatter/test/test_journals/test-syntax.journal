@@ -48,21 +48,28 @@
     expenses:test                        $50.00  ; this is an inline comment
     assets:bank                         -$50.00  ; another comment
 
-; Testing project tags
-project: mugsly
-
-2023-03-01 * Website Development project:mugsly
+; Testing tags - only recognized inside ; comments on transactions, postings and directives
+2023-03-01 * Website Development  ; project:mugsly, client: abc
     income:consulting                   -$500.00
-    assets:bank:checking                 $500.00
+    assets:bank:checking                 $500.00  ; hours:12
 
-project: client-abc
-
-2023-03-05 Design Work project: client-abc
+; Tag on its own comment line within a transaction
+2023-03-05 ! Design Work
+    ; receipt added, project: client-abc
     expenses:contractors                  $200.00
     assets:bank:checking                 -$200.00
 
-; Project tag on separate line
-2023-03-10 * Coffee Meeting
-    project:mugsly
-    expenses:meetings                      $15.00
+; Built-in tags are highlighted differently only where hledger acts on them:
+; date:/date2: in posting comments, type: in account directive comments
+account assets:bank:checking  ; type: A
+account assets:bank:savings
+    ; type: A
+
+; date: and type: here are transaction comments, so they're normal tags
+2023-03-10 Coffee Meeting  ; project:mugsly, date:2023-03-11
+    ; receipt date: 2023-03-09, type: meal
+    expenses:meetings                      $15.00  ; date:2023-03-12
+    ; date2:2023-03-13
     assets:cash                           -$15.00
+
+; Tags in top-level comments are ignored by hledger, so not highlighted: project:none

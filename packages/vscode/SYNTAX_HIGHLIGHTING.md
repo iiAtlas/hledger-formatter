@@ -22,19 +22,19 @@ Account names are highlighted with different colors for each hierarchical level:
   - **Pending (`!`)**: Orange italic for descriptions  
   - **Unreconciled (no marker)**: Red italic for descriptions - makes unreconciled transactions stand out
 - **Amounts**: Numeric amounts with currency symbols are highlighted
-- **Project Tags**: `project: name` or `project:name` tags are highlighted with:
-  - Project keyword in purple bold
-  - Project name in bright blue bold italic
-  - Can appear on separate lines or within transaction descriptions
+- **Tags**: [hledger tags](https://hledger.org/hledger.html#tags) (`name:value`) are highlighted inside `;` comments on transactions, postings, and `account` directives:
+  - Tag names and values are highlighted distinctly from the surrounding comment text
+  - hledger's built-in tags are highlighted differently where hledger acts on them: `date:`/`date2:` in posting comments, and `type:` in `account` directive comments. Elsewhere they're highlighted like any other tag
+  - Tags in top-level comments are not highlighted, since hledger ignores them
 
 ## Example
 ```hledger
 ; This is a comment
 !include common/accounts.journal
-project: mugsly
+account assets:bank:checking  ; type: A
 
-2023-01-01 * Opening Balance project:mugsly
-    assets:bank:checking:personal        $1000.00
+2023-01-01 * Opening Balance  ; project:mugsly
+    assets:bank:checking:personal        $1000.00  ; date:2023-01-02
     equity:opening:balances              -$1000.00
 ```
 
@@ -47,7 +47,8 @@ In this example:
 - `personal` appears in light blue (level 4)
 - The amount `$1000.00` is highlighted
 - The comment is in green italic
-- `project:` appears in purple bold and `mugsly` in bright blue bold italic
+- `project` is highlighted as a tag name and `mugsly` as its value
+- The built-in `type` and `date` tags are highlighted as keywords
 
 ## Custom Theme
 The extension includes an optional "HLedger Color Theme" optimized for viewing journal files with VS Code's dark theme.
@@ -63,8 +64,10 @@ For theme authors, the following TextMate scopes are available:
 - `string.unquoted.description.reconciled.hledger` - Reconciled transaction descriptions
 - `string.unquoted.description.pending.hledger` - Pending transaction descriptions
 - `string.unquoted.description.unreconciled.hledger` - Unreconciled transaction descriptions
-- `keyword.other.project.hledger` - Project tag keyword
-- `entity.name.type.project.hledger` - Project name
+- `keyword.other.directive.account.hledger` - `account` directive keyword
+- `entity.name.type.tag.hledger` - Tag names
+- `keyword.other.tag.special.hledger` - Built-in tag names (`date`/`date2` in posting comments, `type` in account directive comments)
+- `string.unquoted.tag-value.hledger` - Tag values
 - `entity.name.tag.account.level1.hledger` - First level accounts
 - `entity.name.function.account.level2.hledger` - Second level accounts
 - `variable.parameter.account.level3.hledger` - Third level accounts

@@ -27,7 +27,7 @@ Looking for the CLI tool?  Check out: [hledger-fmt](packages/cli/README.md).
 ## Demo
 
 ### Syntax Highlighting ([details](packages/vscode/SYNTAX_HIGHLIGHTING.md))
-Rich syntax highlighting with hierarchical account coloring and project tags:
+Rich syntax highlighting with hierarchical account coloring and tags:
 
 ![Syntax Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/syntax-demo.gif)
 
