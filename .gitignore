@@ -5,6 +5,7 @@ node_modules
 .vscode-test/
 *.vsix
 .env
+.envrc
 .DS_Store
 coverage/
 *.tgz
