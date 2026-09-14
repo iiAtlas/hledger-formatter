@@ -83,30 +83,6 @@ export function isCommentLine(line: string): boolean {
 	return trimmed.startsWith(';') || trimmed.startsWith('#') || trimmed.startsWith('*');
 }
 
-export function isMetadataPostingLine(trimmedLine: string): boolean {
-	if (!trimmedLine) {
-		return false;
-	}
-
-	// Ignore actual postings which always separate account and amount with two spaces or tabs
-	if (/\s{2,}|\t/.test(trimmedLine)) {
-		return false;
-	}
-
-	// Treat key/value metadata (e.g., "project: xyz" or "note: something") as metadata.
-	// Matches keys made of word characters, dots, or hyphens, followed by a colon and optional value that
-	// either ends immediately or starts with single whitespace (no amount-style spacing).
-	return /^[A-Za-z0-9_.-]+:(\s+.*)?$/.test(trimmedLine);
-}
-
-export function isMetadataPostingAccount(account: string | null | undefined): boolean {
-	if (!account) {
-		return false;
-	}
-	const trimmedAccount = account.trim();
-	return trimmedAccount.endsWith(':') || /:\s/.test(trimmedAccount);
-}
-
 /**
  * Checks if a line starts a comment block
  * @param line The line to check (should be trimmed)
@@ -879,18 +855,9 @@ export function calculateBalancingAmount(
 			continue;
 		}
 
-		// Skip metadata lines (e.g., project:, note:)
-		if (isMetadataPostingLine(trimmed)) {
-			continue;
-		}
-
 		// Extract posting detail
 		const detail = extractPostingDetail(line);
 		if (!detail.account) {
-			continue;
-		}
-
-		if (isMetadataPostingAccount(detail.account)) {
 			continue;
 		}
 

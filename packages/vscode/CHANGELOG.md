@@ -2,6 +2,13 @@
 
 All notable changes to the "hledger-formatter" extension will be documented in this file.
 
+## [Unreleased]
+
+- Tag highlighting now follows hledger syntax: tags are only highlighted inside `;` comments
+- All tags are highlighted, not just `project:`; hledger's built-in tags are highlighted differently where hledger acts on them (`date:`/`date2:` in posting comments, `type:` in `account` directive comments)
+- Added highlighting for `account` directives
+- Removed special handling of bare `name: value` lines in balancing suggestions
+
 ## [2.0.2]
 
 - Fix for formatter when numbers were used in account names ([#53](https://github.com/iiAtlas/hledger-formatter/issues/53)). Thanks to @arlagonix for the report!

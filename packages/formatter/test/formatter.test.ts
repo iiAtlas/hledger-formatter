@@ -1037,15 +1037,15 @@ describe('Hledger Formatter Tests', () => {
 		assert.strictEqual(resultDigitsColumn, expectedDigitsColumn, 'Digits should align with existing postings');
 	});
 
-	it('calculateBalancingAmount - ignores metadata lines when already balanced', () => {
+	it('calculateBalancingAmount - ignores tag comment lines', () => {
 		const transaction = {
 			headerLine: 0,
 			lines: [
-				'2025-10-01 * Chrome Web Store developer registration fee',
+				'2025-10-01 * Chrome Web Store developer registration fee  ; project: atlas-notes',
+				'    ; note: subscription renewal',
 				'    expenses:software:developerfees    $5.00',
-				'    assets:bank:checking              -$5.00',
-				'    project: atlas-notes',
-				'    note: subscription renewal'
+				'    ; project:',
+				'    assets:bank:checking'
 			]
 		};
 
@@ -1056,38 +1056,9 @@ describe('Hledger Formatter Tests', () => {
 			negativeCommodityStyle: 'symbolBeforeSign',
 			dateFormat: 'YYYY-MM-DD',
 			commentCharacter: ';'
-		}, 'project: atlas-notes', {
-			currentLineText: transaction.lines[3],
-			cursorColumn: transaction.lines[3].length
-		});
+		}, 'assets:bank:checking');
 
-		assert.strictEqual(result, null, 'Should not suggest balancing amount when only metadata lines are missing amounts');
-	});
-
-	it('calculateBalancingAmount - ignores metadata placeholder without value', () => {
-		const transaction = {
-			headerLine: 0,
-			lines: [
-				'2025-09-29 * OpenAI API usage credit',
-				'    expenses:software:openai    $5.00',
-				'    equity:owner:contributions -$5.00',
-				'    project:'
-			]
-		};
-
-		const result = calculateBalancingAmount(transaction, {
-			amountColumnPosition: 42,
-			amountAlignment: 'widest',
-			indentationWidth: 4,
-			negativeCommodityStyle: 'symbolBeforeSign',
-			dateFormat: 'YYYY-MM-DD',
-			commentCharacter: ';'
-		}, 'project:', {
-			currentLineText: transaction.lines[3],
-			cursorColumn: transaction.lines[3].length
-		});
-
-		assert.strictEqual(result, null, 'Should not suggest balancing amount for metadata placeholder line');
+		assert.ok(result && result.includes('5.00'), `Tag comment lines should not count as postings, got: ${result}`);
 	});
 
 	it('calculateBalancingAmount - already balanced transaction does not suggest zero', () => {

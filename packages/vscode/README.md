@@ -28,7 +28,7 @@ Looking for a CLI tool to do the above? Check out hledger-fmt!
 ## Demo
 
 ### Syntax Highlighting ([details](SYNTAX_HIGHLIGHTING.md))
-Rich syntax highlighting with hierarchical account coloring and project tags:
+Rich syntax highlighting with hierarchical account coloring and tags:
 
 ![Syntax Demo](https://raw.githubusercontent.com/iiAtlas/hledger-formatter/main/images/syntax-demo.gif)
 

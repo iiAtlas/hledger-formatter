@@ -10,8 +10,6 @@ import {
 	type FormatterOptions,
 	DEFAULT_FORMATTER_OPTIONS,
 	isCommentLine,
-	isMetadataPostingLine,
-	isMetadataPostingAccount,
 	isTransactionHeaderLine,
 	extractPostingDetail,
 	formatHledgerJournal,
@@ -641,11 +639,6 @@ class HledgerBalancingAmountProvider implements vscode.InlineCompletionItemProvi
 			return undefined;
 		}
 
-		// Don't suggest for metadata lines (e.g., project:, note:)
-		if (isMetadataPostingLine(trimmed)) {
-			return undefined;
-		}
-
 		// Don't suggest if line already has an amount
 		// Check if there's already two spaces or a tab followed by a potential amount
 		const hasAmount = /\s{2,}|\t/.test(trimmed) && /[\d$€£¥-]/.test(trimmed.split(/\s{2,}|\t/)[1] || '');
@@ -656,10 +649,6 @@ class HledgerBalancingAmountProvider implements vscode.InlineCompletionItemProvi
 		// Extract account name from current line
 		const detail = extractPostingDetail(lineText);
 		if (!detail.account) {
-			return undefined;
-		}
-
-		if (isMetadataPostingAccount(detail.account)) {
 			return undefined;
 		}
 
