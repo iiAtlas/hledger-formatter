@@ -3,7 +3,7 @@
   "displayName": "HLedger Formatter",
   "publisher": "iiatlas",
   "description": "Make plain text accounting fun! Aligns amounts, sorts entries, and provides syntax highlighting for HLedger journal files.",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "icon": "images/icon.png",
   "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://github.com/iiAtlas/hledger-formatter/blob/main/README.md",
@@ -221,7 +221,7 @@
     "vscode:prepublish": "npm run prebuild && node esbuild.mjs --production",
     "vsce:package": "npx vsce package --no-dependencies",
     "vsce:publish": "npx vsce publish --no-dependencies",
-    "ovsx:publish": "npx ovsx publish --no-dependencies -p OVSX_TOKEN_GOES_HERE"
+    "ovsx:publish": "npx ovsx publish --no-dependencies -p \"$OVSX_TOKEN\""
   },
   "devDependencies": {
     "@hledger-fmt/formatter": "*",

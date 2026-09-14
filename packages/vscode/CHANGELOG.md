@@ -2,8 +2,9 @@
 
 All notable changes to the "hledger-formatter" extension will be documented in this file.
 
-## [Unreleased]
+## [2.0.3]
 
+- Fixed amount alignment for account names containing CJK (Chinese, Japanese, Korean) and other wide characters ([#55](https://github.com/iiAtlas/hledger-formatter/pull/55)). Thanks to @kdm1jkm for the contribution!
 - Tag highlighting now follows hledger syntax: tags are only highlighted inside `;` comments
 - All tags are highlighted, not just `project:`; hledger's built-in tags are highlighted differently where hledger acts on them (`date:`/`date2:` in posting comments, `type:` in `account` directive comments)
 - Added highlighting for `account` directives
