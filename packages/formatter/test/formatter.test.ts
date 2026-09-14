@@ -446,6 +446,21 @@ describe('Hledger Formatter Tests', () => {
 		}
 	});
 
+	it('Aligns Korean account names by display width in fixed column mode', () => {
+		const input = `2025-03-01 Korean accounts
+    자산:현금    $1.00
+    abcdefghi    $2.00`;
+
+		const formatted = formatHledgerJournal(input, {
+			amountAlignment: 'fixedColumn',
+			amountColumnPosition: 20
+		});
+		const lines = formatted.split('\n');
+
+		assert.strictEqual(lines[1], '    자산:현금      $1.00');
+		assert.strictEqual(lines[2], '    abcdefghi      $2.00');
+	});
+
 	it('Respects alternate negative commodity style configuration', () => {
 		const testInput = `2025-04-01 Example
   Assets:Cash                $150.00
@@ -496,6 +511,19 @@ describe('Hledger Formatter Tests', () => {
 		}
 
 		assert.ok(observedImprovement, 'At least one transaction should move amounts closer when using widest alignment');
+	});
+
+	it('Uses Korean display width to choose the widest account column', () => {
+		const input = `2025-05-03 Korean widest account
+    자산:장기현금    $1.00
+    abcdefghij    $2.00`;
+
+		const formatted = formatHledgerJournal(input, { amountAlignment: 'widest' });
+		const lines = formatted.split('\n');
+
+		assert.strictEqual(lines[1], '    자산:장기현금  $1.00');
+		assert.strictEqual(lines[2], '    abcdefghij     $2.00');
+		assert.strictEqual(formatHledgerJournal(formatted, { amountAlignment: 'widest' }), formatted);
 	});
 
 	function collectAmountColumnsByTransaction(text: string): number[][] {
